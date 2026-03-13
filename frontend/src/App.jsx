@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import UploadPhotoModal from "./components/UploadPhotoModal";
+import PredictionResultCard from "./components/PredictionResultCard";
+import InsuranceClaimAssistant from "./components/InsuranceClaimAssistant";
 
 const SENSOR_READINGS = [
   { id: "moisture", label: "Soil Moisture", value: "32", unit: "%", status: "normal", icon: "SM" },
@@ -8,37 +11,34 @@ const SENSOR_READINGS = [
   { id: "light", label: "Light Intensity", value: "High", unit: "", status: "normal", icon: "LT" },
 ];
 
-const SMART_ACTIONS = [
-  { title: "Upload Crop Image", subtitle: "AI diagnosis", icon: "UP" },
-  { title: "Risk Alerts", subtitle: "Sensor and weather", icon: "RA" },
-  { title: "Damage Report", subtitle: "Insurance aid", icon: "DR" },
-  { title: "Farm Analytics", subtitle: "Sensor trends", icon: "FA" },
-];
-
-const ALERT_FEED = [
+const FARM_ACTIVITIES = [
   {
-    id: "fungal",
-    title: "Fungal Disease Risk",
-    description: "Humidity above 80% for 12 hrs. Fungal infection likely.",
-    time: "1 hour ago",
-    tone: "warning",
-    icon: "FG",
+    id: "irrigation",
+    title: "Irrigation Recommended",
+    description: "Soil moisture levels are dropping; irrigation suggested within the next 12 hours.",
+    priority: "high",
+    icon: "💧",
   },
   {
-    id: "rain",
-    title: "Heavy Rain Warning",
-    description: "Rain expected tomorrow. Plan to protect crops and drainage.",
-    time: "3 hours ago",
-    tone: "info",
-    icon: "RN",
+    id: "inspect",
+    title: "Inspect Crop Leaves",
+    description: "High humidity may increase fungal disease risk; inspect leaves for spots.",
+    priority: "medium",
+    icon: "🌿",
+  },
+  {
+    id: "pesticide",
+    title: "Delay Pesticide Spraying",
+    description: "Rain forecast tomorrow may wash away chemicals. Wait 48 hours before spraying.",
+    priority: "medium",
+    icon: "⚠️",
   },
   {
     id: "soil",
-    title: "Low Soil Moisture",
-    description: "Zone B moisture dropped under threshold. Irrigation advised.",
-    time: "6 hours ago",
-    tone: "critical",
-    icon: "MS",
+    title: "Soil Health Check",
+    description: "pH levels slightly acidic; consider soil treatment if the trend continues.",
+    priority: "low",
+    icon: "🌱",
   },
 ];
 
@@ -114,27 +114,19 @@ function HealthScoreCard({ onUploadClick }) {
   );
 }
 
-function ActionCard({ title, subtitle, icon, onClick }) {
+function ActivitySuggestionCard({ title, description, priority, icon }) {
   return (
-    <button type="button" className="action-card" onClick={onClick}>
-      <span className="mini-icon normal">{icon}</span>
-      <span className="action-copy">
-        <span className="action-title">{title}</span>
-        <span className="action-subtitle">{subtitle}</span>
-      </span>
-    </button>
-  );
-}
-
-function AlertCard({ title, description, time, tone, icon }) {
-  return (
-    <article className="feed-alert-card">
-      <span className={`alert-badge ${tone}`}>{icon}</span>
-      <div className="feed-alert-content">
-        <p className="feed-alert-title">{title}</p>
-        <p className="feed-alert-description">{description}</p>
+    <article className={`activity-card activity-card--${priority}`} aria-label={title}>
+      <div className="activity-card-left">
+        <span className="activity-icon" aria-hidden="true">{icon}</span>
       </div>
-      <span className="feed-alert-time">{time}</span>
+      <div className="activity-card-body">
+        <p className="activity-title">{title}</p>
+        <p className="activity-description">{description}</p>
+      </div>
+      <span className={`activity-priority activity-priority--${priority}`}>
+        {priority.charAt(0).toUpperCase() + priority.slice(1)}
+      </span>
     </article>
   );
 }
@@ -251,24 +243,10 @@ function DashboardScreen({
   isAnalyzing,
   diagnosis,
   selectedFileName,
+  isUploadModalOpen,
+  onUploadModalClose,
+  onPredictionComplete,
 }) {
-  const onActionClick = (title) => {
-    if (title === "Upload Crop Image") {
-      onTabChange("upload");
-      onUploadClick();
-      return;
-    }
-    if (title === "Risk Alerts") {
-      onTabChange("alerts");
-      return;
-    }
-    if (title === "Farm Analytics") {
-      onTabChange("sensors");
-      return;
-    }
-    onTabChange("reports");
-  };
-
   return (
     <div className="dashboard-shell">
       <main className="mobile-screen" role="main" aria-label="AgroAid home dashboard">
@@ -278,6 +256,12 @@ function DashboardScreen({
           accept="image/*"
           onChange={onFileChange}
           id="crop-image-input"
+        />
+
+        <UploadPhotoModal
+          isOpen={isUploadModalOpen}
+          onClose={onUploadModalClose}
+          onPredictionComplete={onPredictionComplete}
         />
 
         <header className="top-bar">
@@ -318,41 +302,18 @@ function DashboardScreen({
 
             <HealthScoreCard onUploadClick={onUploadClick} />
 
-            <section className="section-head actions-head">
-              <h2>Smart Actions</h2>
-              <button type="button" className="link-button" onClick={() => onTabChange("sensors")}>
-                View All
-              </button>
+            <section className="section-head activity-head">
+              <h2>Farm Activity Suggestions</h2>
             </section>
 
-            <section className="actions-grid" aria-label="Smart actions">
-              {SMART_ACTIONS.map((action) => (
-                <ActionCard
-                  key={action.title}
-                  title={action.title}
-                  subtitle={action.subtitle}
-                  icon={action.icon}
-                  onClick={() => onActionClick(action.title)}
-                />
-              ))}
-            </section>
-
-            <section className="section-head alerts-head">
-              <h2>Recent Alerts</h2>
-              <button type="button" className="link-button" onClick={() => onTabChange("alerts")}>
-                View All
-              </button>
-            </section>
-
-            <section className="feed-list" aria-label="Recent alerts">
-              {ALERT_FEED.map((alert) => (
-                <AlertCard
-                  key={alert.id}
-                  title={alert.title}
-                  description={alert.description}
-                  time={alert.time}
-                  tone={alert.tone}
-                  icon={alert.icon}
+            <section className="activity-list" aria-label="Farm activity suggestions">
+              {FARM_ACTIVITIES.map((activity) => (
+                <ActivitySuggestionCard
+                  key={activity.id}
+                  title={activity.title}
+                  description={activity.description}
+                  priority={activity.priority}
+                  icon={activity.icon}
                 />
               ))}
             </section>
@@ -386,33 +347,29 @@ function DashboardScreen({
               Select Crop Photo
             </button>
 
-            {previewUrl ? (
-              <div className="preview-card">
-                <img src={previewUrl} alt="Selected crop" className="upload-preview" />
-              </div>
-            ) : (
-              <p className="empty-copy">Choose an image to run a mock diagnosis.</p>
+            {diagnosis && (
+              <PredictionResultCard prediction={diagnosis} />
             )}
 
-            {isAnalyzing ? <p className="analyzing-copy">Analyzing image...</p> : null}
-            <DiagnosisResultCard diagnosis={diagnosis} selectedFileName={selectedFileName} />
+            {!diagnosis && (
+              <p className="empty-copy">Click the button above and select an image to run AI diagnosis.</p>
+            )}
           </section>
         ) : null}
 
         {activeTab === "alerts" ? (
           <section className="tab-panel">
             <div className="section-head upload-head">
-              <h2>Alerts Feed</h2>
+              <h2>Farm Activity Suggestions</h2>
             </div>
-            <section className="feed-list" aria-label="All alerts">
-              {ALERT_FEED.map((alert) => (
-                <AlertCard
-                  key={alert.id}
-                  title={alert.title}
-                  description={alert.description}
-                  time={alert.time}
-                  tone={alert.tone}
-                  icon={alert.icon}
+            <section className="activity-list" aria-label="All activity suggestions">
+              {FARM_ACTIVITIES.map((activity) => (
+                <ActivitySuggestionCard
+                  key={activity.id}
+                  title={activity.title}
+                  description={activity.description}
+                  priority={activity.priority}
+                  icon={activity.icon}
                 />
               ))}
             </section>
@@ -422,9 +379,9 @@ function DashboardScreen({
         {activeTab === "reports" ? (
           <section className="tab-panel">
             <div className="section-head upload-head">
-              <h2>Damage Reports</h2>
+              <h2>Insurance Claim Assistant</h2>
             </div>
-            <p className="empty-copy">Insurance-ready damage reports will appear here after field submissions.</p>
+            <InsuranceClaimAssistant />
           </section>
         ) : null}
 
@@ -439,24 +396,16 @@ function App() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [activeTab, setActiveTab] = useState("home");
-  const [selectedFileName, setSelectedFileName] = useState("");
-  const [previewUrl, setPreviewUrl] = useState("");
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [diagnosis, setDiagnosis] = useState(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const diagnosisTimerRef = useRef(null);
 
   const sanitizedPhone = useMemo(() => phoneNumber.replace(/\D/g, ""), [phoneNumber]);
 
   useEffect(() => {
     return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-      if (diagnosisTimerRef.current) {
-        clearTimeout(diagnosisTimerRef.current);
-      }
+      // Cleanup if needed
     };
-  }, [previewUrl]);
+  }, []);
 
   const handleLoginSubmit = (event) => {
     event.preventDefault();
@@ -469,38 +418,17 @@ function App() {
     setActiveTab("home");
   };
 
-  const openUploadPicker = () => {
-    const input = document.getElementById("crop-image-input");
-    if (input) {
-      input.click();
-    }
+  const openUploadModal = () => {
+    setIsUploadModalOpen(true);
   };
 
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
+  const closeUploadModal = () => {
+    setIsUploadModalOpen(false);
+  };
 
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-
-    const newPreviewUrl = URL.createObjectURL(file);
-    setPreviewUrl(newPreviewUrl);
-    setSelectedFileName(file.name);
-    setDiagnosis(null);
-    setIsAnalyzing(true);
+  const handlePredictionComplete = (predictionResult) => {
+    setDiagnosis(predictionResult);
     setActiveTab("upload");
-
-    if (diagnosisTimerRef.current) {
-      clearTimeout(diagnosisTimerRef.current);
-    }
-
-    diagnosisTimerRef.current = setTimeout(() => {
-      setDiagnosis(runMockDiagnosis(file));
-      setIsAnalyzing(false);
-    }, 700);
   };
 
   if (!isAuthenticated) {
@@ -524,12 +452,11 @@ function App() {
     <DashboardScreen
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      onUploadClick={openUploadPicker}
-      onFileChange={handleFileChange}
-      previewUrl={previewUrl}
-      isAnalyzing={isAnalyzing}
+      onUploadClick={openUploadModal}
+      isUploadModalOpen={isUploadModalOpen}
+      onUploadModalClose={closeUploadModal}
+      onPredictionComplete={handlePredictionComplete}
       diagnosis={diagnosis}
-      selectedFileName={selectedFileName}
     />
   );
 }
