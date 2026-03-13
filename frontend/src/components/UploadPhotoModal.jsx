@@ -1,16 +1,18 @@
 import { useRef, useState } from "react";
 import { predictImage } from "../api/prediction";
+import { useLanguage } from "../context/LanguageContext";
 
 /**
  * UploadPhotoModal Component
  * Handles image selection, preview, and prediction request
  */
 function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
+  const { t } = useLanguage();
   const fileInputRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [errorKey, setErrorKey] = useState(null);
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
@@ -18,11 +20,11 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      setError("Please select a valid image file (JPEG, PNG, etc.)");
+      setErrorKey("upload.invalidFileError");
       return;
     }
 
-    setError(null);
+    setErrorKey(null);
     setSelectedFile(file);
 
     // Create preview URL
@@ -35,12 +37,12 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
 
   const handleAnalyze = async () => {
     if (!selectedFile) {
-      setError("Please select an image first");
+      setErrorKey("upload.noFileError");
       return;
     }
 
     setIsLoading(true);
-    setError(null);
+    setErrorKey(null);
 
     try {
       const prediction = await predictImage(selectedFile);
@@ -56,7 +58,11 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
       setPreviewUrl(null);
       onClose();
     } catch (err) {
-      setError(err.message || "Failed to analyze image. Please try again.");
+      if (typeof err.message === "string" && err.message.startsWith("apiErrors.")) {
+        setErrorKey(err.message);
+      } else {
+        setErrorKey("upload.analyzeError");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +79,7 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
   const handleClose = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
-    setError(null);
+    setErrorKey(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -85,17 +91,17 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
   }
 
   return (
-    <div className="modal-overlay" onClick={handleClose} aria-label="Upload photo modal">
+    <div className="modal-overlay" onClick={handleClose} aria-label={t("upload.modalAria")}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Upload Crop Photo</h2>
+          <h2>{t("upload.modalTitle")}</h2>
           <button
             type="button"
             className="modal-close-btn"
             onClick={handleClose}
-            aria-label="Close modal"
+            aria-label={t("upload.modalCloseAria")}
           >
-            ✕
+            {t("upload.closeIcon")}
           </button>
         </div>
 
@@ -104,16 +110,16 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
             <div className="preview-section">
               <img
                 src={previewUrl}
-                alt="Preview"
+                alt={t("upload.uploadTitle")}
                 className="preview-image"
               />
-              <p className="preview-filename">Selected: {selectedFile.name}</p>
+              <p className="preview-filename">{t("upload.selectedFile", { fileName: selectedFile.name })}</p>
               <button
                 type="button"
                 className="change-photo-btn"
                 onClick={handleUploadClick}
               >
-                Choose Different Photo
+                {t("upload.chooseDifferent")}
               </button>
             </div>
           ) : (
@@ -124,12 +130,12 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
                 accept="image/*"
                 onChange={handleFileSelect}
                 style={{ display: "none" }}
-                aria-label="Upload image file"
+                aria-label={t("upload.uploadFileAria")}
               />
               <div className="upload-icon">📸</div>
-              <p className="upload-title">Select a Photo</p>
+              <p className="upload-title">{t("upload.uploadTitle")}</p>
               <p className="upload-subtitle">
-                Tap to choose an image from gallery or files
+                {t("upload.uploadSubtitle")}
               </p>
               <button
                 type="button"
@@ -139,12 +145,12 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
                   handleUploadClick();
                 }}
               >
-                Choose Photo
+                {t("upload.choosePhoto")}
               </button>
             </div>
           )}
 
-          {error && <div className="error-message">{error}</div>}
+          {errorKey && <div className="error-message">{t(errorKey)}</div>}
         </div>
 
         <div className="modal-footer">
@@ -154,7 +160,7 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
             onClick={handleClose}
             disabled={isLoading}
           >
-            Cancel
+            {t("upload.cancel")}
           </button>
           <button
             type="button"
@@ -162,14 +168,14 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
             onClick={handleAnalyze}
             disabled={!selectedFile || isLoading}
           >
-            {isLoading ? "Analyzing..." : "Analyze Image"}
+            {isLoading ? t("upload.analyzing") : t("upload.analyze")}
           </button>
         </div>
 
         {isLoading && (
           <div className="loading-overlay">
             <div className="spinner" />
-            <p>Processing your image...</p>
+            <p>{t("upload.processing")}</p>
           </div>
         )}
       </div>

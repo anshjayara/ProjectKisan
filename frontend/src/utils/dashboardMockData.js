@@ -1,51 +1,51 @@
 const SENSOR_TEMPLATES = [
-  { id: "moisture", label: "Soil Moisture", unit: "%", icon: "SM" },
-  { id: "temperature", label: "Temperature", unit: "deg C", icon: "TP" },
-  { id: "humidity", label: "Humidity", unit: "%", icon: "HM" },
-  { id: "ph", label: "Soil pH", unit: "", icon: "PH" },
-  { id: "light", label: "Light Intensity", unit: "", icon: "LT" },
+  { id: "moisture", labelKey: "sensors.moisture", unitKey: "sensors.unitPercent", icon: "SM" },
+  { id: "temperature", labelKey: "sensors.temperature", unitKey: "sensors.unitDegC", icon: "TP" },
+  { id: "humidity", labelKey: "sensors.humidity", unitKey: "sensors.unitPercent", icon: "HM" },
+  { id: "ph", labelKey: "sensors.ph", unitKey: "sensors.unitNone", icon: "PH" },
+  { id: "light", labelKey: "sensors.light", unitKey: "sensors.unitNone", icon: "LT" },
 ];
 
 const SUGGESTION_POOL = [
   {
     id: "irrigation-12h",
-    title: "Irrigation Recommended",
-    description: "Soil moisture levels are dropping; irrigation suggested within the next 12 hours.",
+    titleKey: "activity.irrigationTitle",
+    descriptionKey: "activity.irrigationDescription",
     priority: "high",
     icon: "IR",
   },
   {
     id: "inspect-fungal",
-    title: "Inspect Leaves for Fungal Infection",
-    description: "Humidity and warm conditions can increase fungal risk. Inspect lower leaves for early spots.",
+    titleKey: "activity.fungalTitle",
+    descriptionKey: "activity.fungalDescription",
     priority: "medium",
     icon: "FG",
   },
   {
     id: "delay-spray-rain",
-    title: "Delay Pesticide Spraying",
-    description: "Rain risk can reduce spray effectiveness. Delay field spray and re-check weather update.",
+    titleKey: "activity.delaySprayTitle",
+    descriptionKey: "activity.delaySprayDescription",
     priority: "medium",
     icon: "RN",
   },
   {
     id: "soil-nutrient-check",
-    title: "Check Soil Nutrient Levels",
-    description: "Run a quick nutrient check to keep crop development uniform across beds.",
+    titleKey: "activity.nutrientTitle",
+    descriptionKey: "activity.nutrientDescription",
     priority: "low",
     icon: "SN",
   },
   {
     id: "monitor-heat-stress",
-    title: "Monitor Crop Temperature Stress",
-    description: "Daytime canopy temperature is elevated. Increase monitoring in exposed rows.",
+    titleKey: "activity.heatTitle",
+    descriptionKey: "activity.heatDescription",
     priority: "high",
     icon: "HT",
   },
   {
     id: "organic-pest-control",
-    title: "Apply Organic Pest Control if Needed",
-    description: "Prepare neem-based treatment in case early pest activity is confirmed.",
+    titleKey: "activity.pestControlTitle",
+    descriptionKey: "activity.pestControlDescription",
     priority: "medium",
     icon: "PC",
   },
@@ -54,37 +54,37 @@ const SUGGESTION_POOL = [
 const ALERT_POOL = [
   {
     id: "fungal-risk",
-    title: "Fungal Disease Risk",
-    description: "Humidity above 80% can accelerate fungal spread in dense crop sections.",
+    titleKey: "alerts.fungalRiskTitle",
+    descriptionKey: "alerts.fungalRiskDescription",
     severity: "medium",
   },
   {
     id: "heavy-rain",
-    title: "Heavy Rain Warning",
-    description: "Rain probability is elevated. Avoid nutrient spray during the expected rain window.",
+    titleKey: "alerts.heavyRainTitle",
+    descriptionKey: "alerts.heavyRainDescription",
     severity: "medium",
   },
   {
     id: "low-moisture",
-    title: "Low Soil Moisture",
-    description: "Soil moisture has moved near crop stress levels in monitored zones.",
+    titleKey: "alerts.lowMoistureTitle",
+    descriptionKey: "alerts.lowMoistureDescription",
     severity: "high",
   },
   {
     id: "high-temp",
-    title: "High Temperature Stress",
-    description: "Temperature is nearing stress thresholds for sensitive crop stages.",
+    titleKey: "alerts.highTempTitle",
+    descriptionKey: "alerts.highTempDescription",
     severity: "high",
   },
   {
     id: "pest-risk",
-    title: "Pest Activity Risk",
-    description: "Conditions may support rising pest movement. Increase scouting frequency.",
+    titleKey: "alerts.pestRiskTitle",
+    descriptionKey: "alerts.pestRiskDescription",
     severity: "medium",
   },
 ];
 
-const ALERT_TIMES = ["10 min ago", "25 min ago", "1 hour ago", "2 hours ago", "3 hours ago"];
+const ALERT_TIME_KEYS = ["alerts.time10m", "alerts.time25m", "alerts.time1h", "alerts.time2h", "alerts.time3h"];
 
 function randomBetween(min, max, precision = 0) {
   const value = Math.random() * (max - min) + min;
@@ -117,7 +117,7 @@ export function generateSensorData() {
     temperature: randomBetween(18, 38),
     humidity: randomBetween(40, 95),
     soilPH: randomBetween(5.5, 7.5, 1).toFixed(1),
-    light: pickRandom(["Low", "Medium", "High"]),
+    light: pickRandom(["low", "medium", "high"]),
   };
 }
 
@@ -160,7 +160,7 @@ function getSensorStatus(sensorData, sensorId) {
     return "normal";
   }
 
-  if (sensorData.light === "Low") {
+  if (sensorData.light === "low") {
     return "warning";
   }
   return "normal";
@@ -203,6 +203,7 @@ export function toSensorCards(sensorData) {
     return {
       ...sensor,
       value: sensorData.light,
+      valueKey: `common.lightLevel.${sensorData.light}`,
       status: getSensorStatus(sensorData, "light"),
     };
   });
@@ -233,7 +234,7 @@ function getInterpretedSuggestions(sensorData) {
     suggestions.push(SUGGESTION_POOL.find((item) => item.id === "monitor-heat-stress"));
   }
 
-  if (sensorData.humidity <= 50 || sensorData.light === "Low") {
+  if (sensorData.humidity <= 50 || sensorData.light === "low") {
     suggestions.push(SUGGESTION_POOL.find((item) => item.id === "soil-nutrient-check"));
   }
 
@@ -243,7 +244,7 @@ function getInterpretedSuggestions(sensorData) {
 function addAlertTime(alert) {
   return {
     ...alert,
-    time: pickRandom(ALERT_TIMES),
+    timeKey: pickRandom(ALERT_TIME_KEYS),
   };
 }
 
@@ -262,7 +263,7 @@ function getInterpretedAlerts(sensorData) {
     alerts.push(ALERT_POOL.find((item) => item.id === "high-temp"));
   }
 
-  if (sensorData.humidity >= 70 && sensorData.light === "Low") {
+  if (sensorData.humidity >= 70 && sensorData.light === "low") {
     alerts.push(ALERT_POOL.find((item) => item.id === "pest-risk"));
   }
 

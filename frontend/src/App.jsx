@@ -3,42 +3,15 @@ import UploadPhotoModal from "./components/UploadPhotoModal";
 import PredictionResultCard from "./components/PredictionResultCard";
 import InsuranceClaimAssistant from "./components/InsuranceClaimAssistant";
 import { generateDashboardData } from "./utils/dashboardMockData";
+import LanguageSelectionScreen from "./components/LanguageSelectionScreen";
+import { useLanguage } from "./context/LanguageContext";
 
-const MOCK_DIAGNOSES = [
-  {
-    disease: "Healthy Leaf",
-    treatment: "No immediate action needed. Continue regular irrigation and weekly observation.",
-    urgent: false,
-  },
-  {
-    disease: "Possible Leaf Spot",
-    treatment: "Remove infected leaves and apply a copper-based fungicide in early morning.",
-    urgent: false,
-  },
-  {
-    disease: "Possible Blight Detected",
-    treatment: "Start fungicide treatment today and isolate affected plants to limit spread.",
-    urgent: true,
-  },
-  {
-    disease: "Pest Damage Suspected",
-    treatment: "Inspect underside of leaves and use neem oil spray for 3 to 5 days.",
-    urgent: true,
-  },
-];
-
-function runMockDiagnosis(file) {
-  const index = (file.size + file.name.length) % MOCK_DIAGNOSES.length;
-  const confidence = Math.min(98, 74 + (file.size % 22));
-  return {
-    ...MOCK_DIAGNOSES[index],
-    confidence,
-  };
-}
-
-function SensorCard({ label, value, unit, status, icon, wide = false }) {
+function SensorCard({ label, value, unit, status, icon, wide = false, t }) {
   return (
-    <article className={`sensor-card ${wide ? "wide" : ""}`} aria-label={`${label} reading`}>
+    <article
+      className={`sensor-card ${wide ? "wide" : ""}`}
+      aria-label={t("dashboard.sensorReadingAria", { label })}
+    >
       <div className="sensor-card-top">
         <span className={`mini-icon ${status}`}>{icon}</span>
         <span className="sensor-label">{label}</span>
@@ -47,36 +20,36 @@ function SensorCard({ label, value, unit, status, icon, wide = false }) {
         {value}
         {unit ? <span className="sensor-unit">{unit}</span> : null}
       </p>
-      <span className={`status-chip ${status}`}>{status}</span>
+      <span className={`status-chip ${status}`}>{t(`common.status.${status}`)}</span>
     </article>
   );
 }
 
-function HealthScoreCard({ onUploadClick }) {
+function HealthScoreCard({ onUploadClick, t }) {
   return (
-    <section className="health-card" aria-label="AI crop health">
+    <section className="health-card" aria-label={t("healthCard.aria")}>
       <div className="health-card-heading">
         <span className="mini-icon normal">AI</span>
-        <h3>AI Crop Health</h3>
+        <h3>{t("healthCard.title")}</h3>
       </div>
-      <p className="health-title">Crop Health Score</p>
+      <p className="health-title">{t("healthCard.scoreLabel")}</p>
       <div className="health-score-row">
-        <p className="health-score">86%</p>
-        <span className="risk-badge">LOW</span>
+        <p className="health-score">{t("healthCard.scoreValue")}</p>
+        <span className="risk-badge">{t("healthCard.riskLevel")}</span>
       </div>
       <ul className="health-notes">
-        <li>Soil moisture currently stable in monitored zones.</li>
-        <li>Humidity elevated, fungal risk may increase in 48 hrs.</li>
-        <li>Schedule preventive spray in high-density crop rows.</li>
+        <li>{t("healthCard.note1")}</li>
+        <li>{t("healthCard.note2")}</li>
+        <li>{t("healthCard.note3")}</li>
       </ul>
       <button type="button" className="confirm-upload-button" onClick={onUploadClick}>
-        Upload Crop Photo for AI Confirmation
+        {t("healthCard.uploadAction")}
       </button>
     </section>
   );
 }
 
-function ActivitySuggestionCard({ title, description, priority, icon }) {
+function ActivitySuggestionCard({ title, description, priority, icon, t }) {
   return (
     <article className={`activity-card activity-card--${priority}`} aria-label={title}>
       <div className="activity-card-left">
@@ -87,13 +60,13 @@ function ActivitySuggestionCard({ title, description, priority, icon }) {
         <p className="activity-description">{description}</p>
       </div>
       <span className={`activity-priority activity-priority--${priority}`}>
-        {priority.charAt(0).toUpperCase() + priority.slice(1)}
+        {t(`common.priority.${priority}`)}
       </span>
     </article>
   );
 }
 
-function AlertFeedCard({ title, description, severity, icon, time }) {
+function AlertFeedCard({ title, description, severity, icon, time, t }) {
   const priority = severity === "high" ? "high" : severity === "low" ? "low" : "medium";
 
   return (
@@ -107,50 +80,34 @@ function AlertFeedCard({ title, description, severity, icon, time }) {
         <p className="diagnosis-meta">{time}</p>
       </div>
       <span className={`activity-priority activity-priority--${priority}`}>
-        {severity.charAt(0).toUpperCase() + severity.slice(1)}
+        {t(`common.priority.${severity}`)}
       </span>
     </article>
   );
 }
 
-function DiagnosisResultCard({ diagnosis, selectedFileName }) {
-  if (!diagnosis) {
-    return null;
-  }
+function BottomNavigation({ activeTab, onTabChange, t }) {
+  const tabs = [
+    { key: "home", label: t("nav.home") },
+    { key: "sensors", label: t("nav.sensors") },
+    { key: "upload", label: t("nav.upload") },
+    { key: "alerts", label: t("nav.alerts") },
+    { key: "reports", label: t("nav.reports") },
+  ];
 
   return (
-    <section className="diagnosis-card" aria-label="Diagnosis result">
-      <p className="diagnosis-title">Diagnosis Result</p>
-      <p className="diagnosis-name">{diagnosis.disease}</p>
-      <p className="diagnosis-meta">
-        Confidence: <strong>{diagnosis.confidence}%</strong>
-      </p>
-      <p className="diagnosis-meta">
-        Urgency: <strong>{diagnosis.urgent ? "Urgent action recommended" : "Routine care"}</strong>
-      </p>
-      <p className="treatment-title">Treatment Recommendation</p>
-      <p className="treatment-text">{diagnosis.treatment}</p>
-      {selectedFileName ? <p className="file-label">Image: {selectedFileName}</p> : null}
-    </section>
-  );
-}
-
-function BottomNavigation({ activeTab, onTabChange }) {
-  const tabs = ["Home", "Sensors", "Upload", "Alerts", "Reports"];
-
-  return (
-    <nav className="bottom-nav" aria-label="Bottom navigation">
+    <nav className="bottom-nav" aria-label={t("nav.bottomAria")}>
       {tabs.map((tab) => {
-        const key = tab.toLowerCase();
+        const key = tab.key;
         return (
           <button
-            key={tab}
+            key={key}
             type="button"
             className={`nav-item${activeTab === key ? " active" : ""}`}
             onClick={() => onTabChange(key)}
           >
             <span className={`nav-icon${key === "alerts" ? " dot" : ""}`} aria-hidden="true" />
-            {tab}
+            {tab.label}
           </button>
         );
       })}
@@ -158,33 +115,33 @@ function BottomNavigation({ activeTab, onTabChange }) {
   );
 }
 
-function LoginScreen({ phoneNumber, onPhoneChange, onSubmit, error }) {
+function LoginScreen({ phoneNumber, onPhoneChange, onSubmit, errorKey, t }) {
   return (
     <div className="app-shell">
       <div className="top-strip" aria-hidden="true" />
 
-      <main className="login-card" role="main" aria-label="Login screen">
+      <main className="login-card" role="main" aria-label={t("auth.loginScreenAria")}>
         <section className="brand-block">
           <div className="logo" aria-hidden="true">
             <span className="leaf-icon" />
           </div>
-          <h1>Your AI Crop Doctor</h1>
+          <h1>{t("auth.title")}</h1>
           <p className="brand-subtitle">
-            Identify diseases and get expert
+            {t("auth.subtitleLine1")}
             <br />
-            treatment recommendations in seconds.
+            {t("auth.subtitleLine2")}
           </p>
         </section>
 
         <form className="login-form" onSubmit={onSubmit} noValidate>
           <label htmlFor="phone" className="field-label">
-            Login with Phone Number
+            {t("auth.phoneLabel")}
           </label>
 
           <div className="phone-input-wrap">
             <span className="country-code" aria-hidden="true">
               <span className="globe">O</span>
-              +91
+              {t("common.countryCode")}
             </span>
             <input
               id="phone"
@@ -193,23 +150,23 @@ function LoginScreen({ phoneNumber, onPhoneChange, onSubmit, error }) {
               maxLength={10}
               value={phoneNumber}
               onChange={(event) => onPhoneChange(event.target.value)}
-              placeholder="Enter 10-digit mobile number"
+              placeholder={t("auth.phonePlaceholder")}
             />
           </div>
 
-          <p className="helper-text">A 6-digit OTP will be sent to your phone for secure verification.</p>
-          {error ? <p className="form-error">{error}</p> : null}
+          <p className="helper-text">{t("auth.helperText")}</p>
+          {errorKey ? <p className="form-error">{t(errorKey)}</p> : null}
 
           <button type="submit" className="cta-button">
-            Get Started
+            {t("auth.getStarted")}
           </button>
         </form>
 
         <footer className="screen-footer">
           <p>
-            By continuing, you agree to AgroAid&apos;s <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+            {t("auth.termsPrefix")} <a href="#">{t("auth.termsLink")}</a> {t("auth.and")} <a href="#">{t("auth.privacyLink")}</a>.
           </p>
-          <p className="version">VERSION 2.4.0</p>
+          <p className="version">{t("auth.version")}</p>
         </footer>
       </main>
     </div>
@@ -220,32 +177,23 @@ function DashboardScreen({
   activeTab,
   onTabChange,
   onUploadClick,
-  onFileChange,
-  previewUrl,
-  isAnalyzing,
   diagnosis,
-  selectedFileName,
   isUploadModalOpen,
   onUploadModalClose,
   onPredictionComplete,
   sensorReadings,
   suggestions,
   alerts,
+  language,
+  onLanguageChange,
+  t,
 }) {
   const primarySensors = sensorReadings.slice(0, 4);
   const lightSensor = sensorReadings[4] || null;
 
   return (
     <div className="dashboard-shell">
-      <main className="mobile-screen" role="main" aria-label="AgroAid home dashboard">
-        <input
-          className="hidden-input"
-          type="file"
-          accept="image/*"
-          onChange={onFileChange}
-          id="crop-image-input"
-        />
-
+      <main className="mobile-screen" role="main" aria-label={t("dashboard.homeAria")}>
         <UploadPhotoModal
           isOpen={isUploadModalOpen}
           onClose={onUploadModalClose}
@@ -253,7 +201,23 @@ function DashboardScreen({
         />
 
         <header className="top-bar">
-          <h1>AgroAid</h1>
+          <h1>{t("common.appName")}</h1>
+          <div className="language-toggle" aria-label={t("common.language.switchLabel")}>
+            <button
+              type="button"
+              className={`language-toggle-btn${language === "en" ? " active" : ""}`}
+              onClick={() => onLanguageChange("en")}
+            >
+              {t("common.language.english")}
+            </button>
+            <button
+              type="button"
+              className={`language-toggle-btn${language === "hi" ? " active" : ""}`}
+              onClick={() => onLanguageChange("hi")}
+            >
+              {t("common.language.hindi")}
+            </button>
+          </div>
         </header>
 
         {activeTab === "home" ? (
@@ -261,47 +225,64 @@ function DashboardScreen({
             <section className="welcome-row">
               <div>
                 <p className="greeting">
-                  Hello, Ramesh! <span aria-hidden="true">👋</span>
+                  {t("dashboard.greeting")} <span aria-hidden="true">👋</span>
                 </p>
                 <p className="location-line">
-                  Punjab, India <span aria-hidden="true">|</span> Harvesting Season
+                  {t("dashboard.location")} <span aria-hidden="true">|</span> {t("dashboard.season")}
                 </p>
               </div>
 
-              <div className="avatar-wrap" aria-label="Ramesh online">
+              <div className="avatar-wrap" aria-label={t("dashboard.avatarAria")}>
                 <div className="avatar" aria-hidden="true" />
                 <span className="online-dot" aria-hidden="true" />
               </div>
             </section>
 
-            <section className="sensor-panel" aria-label="Farm sensor status">
+            <section className="sensor-panel" aria-label={t("dashboard.sensorStatus")}>
               <div className="sensor-panel-head">
                 <span className="mini-icon normal">IO</span>
-                <h2>Farm Sensor Status</h2>
+                <h2>{t("dashboard.sensorStatus")}</h2>
               </div>
 
               <div className="sensor-grid">
                 {primarySensors.map((sensor) => (
-                  <SensorCard key={sensor.id} {...sensor} />
+                  <SensorCard
+                    key={sensor.id}
+                    {...sensor}
+                    label={t(sensor.labelKey)}
+                    value={sensor.valueKey ? t(sensor.valueKey) : sensor.value}
+                    unit={sensor.unitKey ? t(sensor.unitKey) : sensor.unit}
+                    t={t}
+                  />
                 ))}
-                {lightSensor ? <SensorCard {...lightSensor} wide /> : null}
+                {lightSensor ? (
+                  <SensorCard
+                    {...lightSensor}
+                    label={t(lightSensor.labelKey)}
+                    value={lightSensor.valueKey ? t(lightSensor.valueKey) : lightSensor.value}
+                    unit={lightSensor.unitKey ? t(lightSensor.unitKey) : lightSensor.unit}
+                    wide
+                    t={t}
+                  />
+                ) : null}
               </div>
             </section>
 
-            <HealthScoreCard onUploadClick={onUploadClick} />
+            <HealthScoreCard onUploadClick={onUploadClick} t={t} />
 
             <section className="section-head activity-head">
-              <h2>Farm Activity Suggestions</h2>
+              <h2>{t("dashboard.activitySuggestions")}</h2>
             </section>
 
-            <section className="activity-list" aria-label="Farm activity suggestions">
+            <section className="activity-list" aria-label={t("dashboard.farmActivityAria")}>
               {suggestions.map((activity) => (
                 <ActivitySuggestionCard
                   key={activity.id}
-                  title={activity.title}
-                  description={activity.description}
+                  title={t(activity.titleKey)}
+                  description={t(activity.descriptionKey)}
                   priority={activity.priority}
                   icon={activity.icon}
+                  t={t}
                 />
               ))}
             </section>
@@ -311,28 +292,36 @@ function DashboardScreen({
         {activeTab === "sensors" ? (
           <section className="tab-panel">
             <div className="section-head upload-head">
-              <h2>Live Sensor Readings</h2>
+              <h2>{t("dashboard.sensorsHeader")}</h2>
             </div>
 
-            <section className="sensor-panel" aria-label="Detailed sensor status">
+            <section className="sensor-panel" aria-label={t("dashboard.detailedSensorAria")}>
               <div className="sensor-grid">
                 {sensorReadings.map((sensor) => (
-                  <SensorCard key={sensor.id} {...sensor} wide={sensor.id === "light"} />
+                  <SensorCard
+                    key={sensor.id}
+                    {...sensor}
+                    label={t(sensor.labelKey)}
+                    value={sensor.valueKey ? t(sensor.valueKey) : sensor.value}
+                    unit={sensor.unitKey ? t(sensor.unitKey) : sensor.unit}
+                    wide={sensor.id === "light"}
+                    t={t}
+                  />
                 ))}
               </div>
             </section>
 
-            <p className="empty-copy">IoT streams refresh every 5 minutes. API connector can be attached to this panel later.</p>
+            <p className="empty-copy">{t("dashboard.sensorsNote")}</p>
           </section>
         ) : null}
 
         {activeTab === "upload" ? (
           <section className="tab-panel">
             <div className="section-head upload-head">
-              <h2>Upload Crop Image</h2>
+              <h2>{t("dashboard.uploadHeader")}</h2>
             </div>
             <button type="button" className="upload-trigger" onClick={onUploadClick}>
-              Select Crop Photo
+              {t("upload.triggerButton")}
             </button>
 
             {diagnosis && (
@@ -340,7 +329,7 @@ function DashboardScreen({
             )}
 
             {!diagnosis && (
-              <p className="empty-copy">Click the button above and select an image to run AI diagnosis.</p>
+              <p className="empty-copy">{t("dashboard.uploadEmpty")}</p>
             )}
           </section>
         ) : null}
@@ -348,17 +337,18 @@ function DashboardScreen({
         {activeTab === "alerts" ? (
           <section className="tab-panel">
             <div className="section-head upload-head">
-              <h2>Alert Feed</h2>
+              <h2>{t("dashboard.alertsHeader")}</h2>
             </div>
-            <section className="activity-list" aria-label="Farm alert feed">
+            <section className="activity-list" aria-label={t("dashboard.farmAlertAria")}>
               {alerts.map((alertItem) => (
                 <AlertFeedCard
                   key={alertItem.id}
-                  title={alertItem.title}
-                  description={alertItem.description}
+                  title={t(alertItem.titleKey)}
+                  description={t(alertItem.descriptionKey)}
                   severity={alertItem.severity}
                   icon="AL"
-                  time={alertItem.time}
+                  time={t(alertItem.timeKey)}
+                  t={t}
                 />
               ))}
             </section>
@@ -368,22 +358,23 @@ function DashboardScreen({
         {activeTab === "reports" ? (
           <section className="tab-panel">
             <div className="section-head upload-head">
-              <h2>Insurance Claim Assistant</h2>
+              <h2>{t("dashboard.reportsHeader")}</h2>
             </div>
             <InsuranceClaimAssistant />
           </section>
         ) : null}
 
-        <BottomNavigation activeTab={activeTab} onTabChange={onTabChange} />
+        <BottomNavigation activeTab={activeTab} onTabChange={onTabChange} t={t} />
       </main>
     </div>
   );
 }
 
 function App() {
+  const { language, setLanguage, t, isReady, hasSelectedLanguage } = useLanguage();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [phoneError, setPhoneError] = useState("");
+  const [phoneErrorKey, setPhoneErrorKey] = useState("");
   const [activeTab, setActiveTab] = useState("home");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [diagnosis, setDiagnosis] = useState(null);
@@ -403,10 +394,10 @@ function App() {
   const handleLoginSubmit = (event) => {
     event.preventDefault();
     if (sanitizedPhone.length !== 10) {
-      setPhoneError("Please enter a valid 10-digit mobile number.");
+      setPhoneErrorKey("auth.phoneError");
       return;
     }
-    setPhoneError("");
+    setPhoneErrorKey("");
     setIsAuthenticated(true);
     setActiveTab("home");
   };
@@ -424,6 +415,14 @@ function App() {
     setActiveTab("upload");
   };
 
+  if (!isReady) {
+    return null;
+  }
+
+  if (!hasSelectedLanguage) {
+    return <LanguageSelectionScreen />;
+  }
+
   if (!isAuthenticated) {
     return (
       <LoginScreen
@@ -431,12 +430,13 @@ function App() {
         onPhoneChange={(value) => {
           const nextValue = value.replace(/\D/g, "").slice(0, 10);
           setPhoneNumber(nextValue);
-          if (phoneError) {
-            setPhoneError("");
+          if (phoneErrorKey) {
+            setPhoneErrorKey("");
           }
         }}
         onSubmit={handleLoginSubmit}
-        error={phoneError}
+        errorKey={phoneErrorKey}
+        t={t}
       />
     );
   }
@@ -453,6 +453,9 @@ function App() {
       sensorReadings={sensorData}
       suggestions={suggestions}
       alerts={alerts}
+      language={language}
+      onLanguageChange={setLanguage}
+      t={t}
     />
   );
 }
