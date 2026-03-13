@@ -1,12 +1,13 @@
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import FastAPI, File, HTTPException, UploadFile, status
 
-from ...schemas.prediction import PredictionResponse
-from ...services.disease_model import DISEASE_METADATA, predict_disease
+from backend.app.schemas.prediction import PredictionResponse
+from backend.app.services.disease_model import DISEASE_METADATA, predict_disease
 
-router = APIRouter()
+app = FastAPI()
 
 
-@router.post("/predict", response_model=PredictionResponse)
+@app.post("/", response_model=PredictionResponse)
+@app.post("/api/predict", response_model=PredictionResponse)
 async def predict_crop_disease(file: UploadFile = File(...)) -> PredictionResponse:
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(
@@ -33,7 +34,7 @@ async def predict_crop_disease(file: UploadFile = File(...)) -> PredictionRespon
 
     return PredictionResponse(
         disease=disease,
-        confidence=round(confidence * 100, 1),  # Convert to percentage
+        confidence=round(confidence * 100, 1),
         treatment=metadata["treatment"],
         urgency_level=urgency_level,
         is_healthy=is_healthy,

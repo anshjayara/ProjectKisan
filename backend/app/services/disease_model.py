@@ -1,7 +1,6 @@
 from io import BytesIO
 
-import numpy as np
-from PIL import Image
+from PIL import Image, ImageStat
 
 # Disease metadata: treatment, urgency level, and health status
 DISEASE_METADATA = {
@@ -28,10 +27,10 @@ DISEASE_TREATMENTS = {
 }
 
 
-def _preprocess_image(image_bytes: bytes) -> np.ndarray:
+def _preprocess_image(image_bytes: bytes) -> tuple[float, float, float]:
     image = Image.open(BytesIO(image_bytes)).convert("RGB").resize((128, 128))
-    pixels = np.asarray(image, dtype=np.float32) / 255.0
-    return pixels
+    mean_r, mean_g, mean_b = ImageStat.Stat(image).mean
+    return (mean_r / 255.0, mean_g / 255.0, mean_b / 255.0)
 
 
 def predict_disease(image_bytes: bytes) -> tuple[str, float, str, bool]:
@@ -40,11 +39,7 @@ def predict_disease(image_bytes: bytes) -> tuple[str, float, str, bool]:
     Returns:
         tuple: (disease_name, confidence, urgency_level, is_healthy)
     """
-    pixels = _preprocess_image(image_bytes)
-
-    avg_r = float(pixels[:, :, 0].mean())
-    avg_g = float(pixels[:, :, 1].mean())
-    avg_b = float(pixels[:, :, 2].mean())
+    avg_r, avg_g, avg_b = _preprocess_image(image_bytes)
 
     if avg_g > (avg_r + 0.08) and avg_g > (avg_b + 0.05):
         disease = "Healthy"
