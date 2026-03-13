@@ -10,37 +10,34 @@ const SENSOR_READINGS = [
   { id: "light", label: "Light Intensity", value: "High", unit: "", status: "normal", icon: "LT" },
 ];
 
-const SMART_ACTIONS = [
-  { title: "Upload Crop Image", subtitle: "AI diagnosis", icon: "UP" },
-  { title: "Risk Alerts", subtitle: "Sensor and weather", icon: "RA" },
-  { title: "Damage Report", subtitle: "Insurance aid", icon: "DR" },
-  { title: "Farm Analytics", subtitle: "Sensor trends", icon: "FA" },
-];
-
-const ALERT_FEED = [
+const FARM_ACTIVITIES = [
   {
-    id: "fungal",
-    title: "Fungal Disease Risk",
-    description: "Humidity above 80% for 12 hrs. Fungal infection likely.",
-    time: "1 hour ago",
-    tone: "warning",
-    icon: "FG",
+    id: "irrigation",
+    title: "Irrigation Recommended",
+    description: "Soil moisture levels are dropping; irrigation suggested within the next 12 hours.",
+    priority: "high",
+    icon: "💧",
   },
   {
-    id: "rain",
-    title: "Heavy Rain Warning",
-    description: "Rain expected tomorrow. Plan to protect crops and drainage.",
-    time: "3 hours ago",
-    tone: "info",
-    icon: "RN",
+    id: "inspect",
+    title: "Inspect Crop Leaves",
+    description: "High humidity may increase fungal disease risk; inspect leaves for spots.",
+    priority: "medium",
+    icon: "🌿",
+  },
+  {
+    id: "pesticide",
+    title: "Delay Pesticide Spraying",
+    description: "Rain forecast tomorrow may wash away chemicals. Wait 48 hours before spraying.",
+    priority: "medium",
+    icon: "⚠️",
   },
   {
     id: "soil",
-    title: "Low Soil Moisture",
-    description: "Zone B moisture dropped under threshold. Irrigation advised.",
-    time: "6 hours ago",
-    tone: "critical",
-    icon: "MS",
+    title: "Soil Health Check",
+    description: "pH levels slightly acidic; consider soil treatment if the trend continues.",
+    priority: "low",
+    icon: "🌱",
   },
 ];
 
@@ -116,27 +113,19 @@ function HealthScoreCard({ onUploadClick }) {
   );
 }
 
-function ActionCard({ title, subtitle, icon, onClick }) {
+function ActivitySuggestionCard({ title, description, priority, icon }) {
   return (
-    <button type="button" className="action-card" onClick={onClick}>
-      <span className="mini-icon normal">{icon}</span>
-      <span className="action-copy">
-        <span className="action-title">{title}</span>
-        <span className="action-subtitle">{subtitle}</span>
-      </span>
-    </button>
-  );
-}
-
-function AlertCard({ title, description, time, tone, icon }) {
-  return (
-    <article className="feed-alert-card">
-      <span className={`alert-badge ${tone}`}>{icon}</span>
-      <div className="feed-alert-content">
-        <p className="feed-alert-title">{title}</p>
-        <p className="feed-alert-description">{description}</p>
+    <article className={`activity-card activity-card--${priority}`} aria-label={title}>
+      <div className="activity-card-left">
+        <span className="activity-icon" aria-hidden="true">{icon}</span>
       </div>
-      <span className="feed-alert-time">{time}</span>
+      <div className="activity-card-body">
+        <p className="activity-title">{title}</p>
+        <p className="activity-description">{description}</p>
+      </div>
+      <span className={`activity-priority activity-priority--${priority}`}>
+        {priority.charAt(0).toUpperCase() + priority.slice(1)}
+      </span>
     </article>
   );
 }
@@ -257,22 +246,6 @@ function DashboardScreen({
   onUploadModalClose,
   onPredictionComplete,
 }) {
-  const onActionClick = (title) => {
-    if (title === "Upload Crop Image") {
-      onUploadClick();
-      return;
-    }
-    if (title === "Risk Alerts") {
-      onTabChange("alerts");
-      return;
-    }
-    if (title === "Farm Analytics") {
-      onTabChange("sensors");
-      return;
-    }
-    onTabChange("reports");
-  };
-
   return (
     <div className="dashboard-shell">
       <main className="mobile-screen" role="main" aria-label="AgroAid home dashboard">
@@ -328,41 +301,18 @@ function DashboardScreen({
 
             <HealthScoreCard onUploadClick={onUploadClick} />
 
-            <section className="section-head actions-head">
-              <h2>Smart Actions</h2>
-              <button type="button" className="link-button" onClick={() => onTabChange("sensors")}>
-                View All
-              </button>
+            <section className="section-head activity-head">
+              <h2>Farm Activity Suggestions</h2>
             </section>
 
-            <section className="actions-grid" aria-label="Smart actions">
-              {SMART_ACTIONS.map((action) => (
-                <ActionCard
-                  key={action.title}
-                  title={action.title}
-                  subtitle={action.subtitle}
-                  icon={action.icon}
-                  onClick={() => onActionClick(action.title)}
-                />
-              ))}
-            </section>
-
-            <section className="section-head alerts-head">
-              <h2>Recent Alerts</h2>
-              <button type="button" className="link-button" onClick={() => onTabChange("alerts")}>
-                View All
-              </button>
-            </section>
-
-            <section className="feed-list" aria-label="Recent alerts">
-              {ALERT_FEED.map((alert) => (
-                <AlertCard
-                  key={alert.id}
-                  title={alert.title}
-                  description={alert.description}
-                  time={alert.time}
-                  tone={alert.tone}
-                  icon={alert.icon}
+            <section className="activity-list" aria-label="Farm activity suggestions">
+              {FARM_ACTIVITIES.map((activity) => (
+                <ActivitySuggestionCard
+                  key={activity.id}
+                  title={activity.title}
+                  description={activity.description}
+                  priority={activity.priority}
+                  icon={activity.icon}
                 />
               ))}
             </section>
@@ -409,17 +359,16 @@ function DashboardScreen({
         {activeTab === "alerts" ? (
           <section className="tab-panel">
             <div className="section-head upload-head">
-              <h2>Alerts Feed</h2>
+              <h2>Farm Activity Suggestions</h2>
             </div>
-            <section className="feed-list" aria-label="All alerts">
-              {ALERT_FEED.map((alert) => (
-                <AlertCard
-                  key={alert.id}
-                  title={alert.title}
-                  description={alert.description}
-                  time={alert.time}
-                  tone={alert.tone}
-                  icon={alert.icon}
+            <section className="activity-list" aria-label="All activity suggestions">
+              {FARM_ACTIVITIES.map((activity) => (
+                <ActivitySuggestionCard
+                  key={activity.id}
+                  title={activity.title}
+                  description={activity.description}
+                  priority={activity.priority}
+                  icon={activity.icon}
                 />
               ))}
             </section>

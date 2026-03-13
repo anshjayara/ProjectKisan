@@ -18,7 +18,7 @@ cd backend
 pip install -r requirements.txt
 
 # Run the server
-python -m uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 # Server will run at: http://localhost:8000
 # API docs at: http://localhost:8000/docs
@@ -36,6 +36,11 @@ npm install
 npm run dev
 
 # App will open at: http://localhost:5173
+
+# Optional: if backend runs on a different port (example 8001)
+# PowerShell:
+$env:VITE_API_BASE_URL="http://127.0.0.1:8001/api"
+npm run dev
 ```
 
 ## Testing the Feature
@@ -158,6 +163,13 @@ Body: file (image file)
 - Check CORS is enabled in `backend/app/main.py` (it is by default)
 - Check API_BASE URL in `frontend/src/api/prediction.js`
 - Ensure backend is running on port 8000
+
+### Backend shows `[WinError 10013]` when starting?
+- Try explicit localhost bind:
+  - `python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000`
+- If port 8000 is blocked on your machine, use a different port:
+  - `python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8001`
+- If you switch backend port, also update frontend API base URL accordingly (for example to `http://127.0.0.1:8001`).
 
 ### Image upload fails?
 - Check file is a valid image (JPEG, PNG, etc.)

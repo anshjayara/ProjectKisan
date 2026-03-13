@@ -57,11 +57,16 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
       onClose();
     } catch (err) {
       setError(err.message || "Failed to analyze image. Please try again.");
+    } finally {
       setIsLoading(false);
     }
   };
 
   const handleUploadClick = () => {
+    // Reset value so selecting the same file triggers onChange reliably.
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     fileInputRef.current?.click();
   };
 
@@ -69,6 +74,9 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
     setSelectedFile(null);
     setPreviewUrl(null);
     setError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     onClose();
   };
 
@@ -126,7 +134,10 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
               <button
                 type="button"
                 className="upload-trigger-btn"
-                onClick={handleUploadClick}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleUploadClick();
+                }}
               >
                 Choose Photo
               </button>
