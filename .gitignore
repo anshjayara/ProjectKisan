@@ -12,3 +12,6 @@ frontend/dist/
 # OS
 .DS_Store
 Thumbs.db
+
+# Dataset folder
+Dataset of diseased plant leaf images and corresponding labels/PlantVillage/
