@@ -1,46 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import UploadPhotoModal from "./components/UploadPhotoModal";
 import PredictionResultCard from "./components/PredictionResultCard";
 import InsuranceClaimAssistant from "./components/InsuranceClaimAssistant";
-
-const SENSOR_READINGS = [
-  { id: "moisture", label: "Soil Moisture", value: "32", unit: "%", status: "normal", icon: "SM" },
-  { id: "temperature", label: "Temperature", value: "27", unit: "deg C", status: "warning", icon: "TP" },
-  { id: "humidity", label: "Humidity", value: "72", unit: "%", status: "warning", icon: "HM" },
-  { id: "ph", label: "Soil pH", value: "6.4", unit: "", status: "normal", icon: "PH" },
-  { id: "light", label: "Light Intensity", value: "High", unit: "", status: "normal", icon: "LT" },
-];
-
-const FARM_ACTIVITIES = [
-  {
-    id: "irrigation",
-    title: "Irrigation Recommended",
-    description: "Soil moisture levels are dropping; irrigation suggested within the next 12 hours.",
-    priority: "high",
-    icon: "💧",
-  },
-  {
-    id: "inspect",
-    title: "Inspect Crop Leaves",
-    description: "High humidity may increase fungal disease risk; inspect leaves for spots.",
-    priority: "medium",
-    icon: "🌿",
-  },
-  {
-    id: "pesticide",
-    title: "Delay Pesticide Spraying",
-    description: "Rain forecast tomorrow may wash away chemicals. Wait 48 hours before spraying.",
-    priority: "medium",
-    icon: "⚠️",
-  },
-  {
-    id: "soil",
-    title: "Soil Health Check",
-    description: "pH levels slightly acidic; consider soil treatment if the trend continues.",
-    priority: "low",
-    icon: "🌱",
-  },
-];
+import { generateDashboardData } from "./utils/dashboardMockData";
 
 const MOCK_DIAGNOSES = [
   {
@@ -126,6 +88,26 @@ function ActivitySuggestionCard({ title, description, priority, icon }) {
       </div>
       <span className={`activity-priority activity-priority--${priority}`}>
         {priority.charAt(0).toUpperCase() + priority.slice(1)}
+      </span>
+    </article>
+  );
+}
+
+function AlertFeedCard({ title, description, severity, icon, time }) {
+  const priority = severity === "high" ? "high" : severity === "low" ? "low" : "medium";
+
+  return (
+    <article className={`activity-card activity-card--${priority}`} aria-label={title}>
+      <div className="activity-card-left">
+        <span className="activity-icon" aria-hidden="true">{icon}</span>
+      </div>
+      <div className="activity-card-body">
+        <p className="activity-title">{title}</p>
+        <p className="activity-description">{description}</p>
+        <p className="diagnosis-meta">{time}</p>
+      </div>
+      <span className={`activity-priority activity-priority--${priority}`}>
+        {severity.charAt(0).toUpperCase() + severity.slice(1)}
       </span>
     </article>
   );
@@ -246,7 +228,13 @@ function DashboardScreen({
   isUploadModalOpen,
   onUploadModalClose,
   onPredictionComplete,
+  sensorReadings,
+  suggestions,
+  alerts,
 }) {
+  const primarySensors = sensorReadings.slice(0, 4);
+  const lightSensor = sensorReadings[4] || null;
+
   return (
     <div className="dashboard-shell">
       <main className="mobile-screen" role="main" aria-label="AgroAid home dashboard">
@@ -293,10 +281,10 @@ function DashboardScreen({
               </div>
 
               <div className="sensor-grid">
-                {SENSOR_READINGS.slice(0, 4).map((sensor) => (
+                {primarySensors.map((sensor) => (
                   <SensorCard key={sensor.id} {...sensor} />
                 ))}
-                <SensorCard {...SENSOR_READINGS[4]} wide />
+                {lightSensor ? <SensorCard {...lightSensor} wide /> : null}
               </div>
             </section>
 
@@ -307,7 +295,7 @@ function DashboardScreen({
             </section>
 
             <section className="activity-list" aria-label="Farm activity suggestions">
-              {FARM_ACTIVITIES.map((activity) => (
+              {suggestions.map((activity) => (
                 <ActivitySuggestionCard
                   key={activity.id}
                   title={activity.title}
@@ -328,7 +316,7 @@ function DashboardScreen({
 
             <section className="sensor-panel" aria-label="Detailed sensor status">
               <div className="sensor-grid">
-                {SENSOR_READINGS.map((sensor) => (
+                {sensorReadings.map((sensor) => (
                   <SensorCard key={sensor.id} {...sensor} wide={sensor.id === "light"} />
                 ))}
               </div>
@@ -360,16 +348,17 @@ function DashboardScreen({
         {activeTab === "alerts" ? (
           <section className="tab-panel">
             <div className="section-head upload-head">
-              <h2>Farm Activity Suggestions</h2>
+              <h2>Alert Feed</h2>
             </div>
-            <section className="activity-list" aria-label="All activity suggestions">
-              {FARM_ACTIVITIES.map((activity) => (
-                <ActivitySuggestionCard
-                  key={activity.id}
-                  title={activity.title}
-                  description={activity.description}
-                  priority={activity.priority}
-                  icon={activity.icon}
+            <section className="activity-list" aria-label="Farm alert feed">
+              {alerts.map((alertItem) => (
+                <AlertFeedCard
+                  key={alertItem.id}
+                  title={alertItem.title}
+                  description={alertItem.description}
+                  severity={alertItem.severity}
+                  icon="AL"
+                  time={alertItem.time}
                 />
               ))}
             </section>
@@ -398,13 +387,17 @@ function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [diagnosis, setDiagnosis] = useState(null);
+  const [sensorData, setSensorData] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [alerts, setAlerts] = useState([]);
 
   const sanitizedPhone = useMemo(() => phoneNumber.replace(/\D/g, ""), [phoneNumber]);
 
   useEffect(() => {
-    return () => {
-      // Cleanup if needed
-    };
+    const generated = generateDashboardData();
+    setSensorData(generated.sensorData);
+    setSuggestions(generated.suggestions);
+    setAlerts(generated.alerts);
   }, []);
 
   const handleLoginSubmit = (event) => {
@@ -457,6 +450,9 @@ function App() {
       onUploadModalClose={closeUploadModal}
       onPredictionComplete={handlePredictionComplete}
       diagnosis={diagnosis}
+      sensorReadings={sensorData}
+      suggestions={suggestions}
+      alerts={alerts}
     />
   );
 }
