@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import UploadPhotoModal from "./components/UploadPhotoModal";
+import PredictionResultCard from "./components/PredictionResultCard";
 
 const SENSOR_READINGS = [
   { id: "moisture", label: "Soil Moisture", value: "32", unit: "%", status: "normal", icon: "SM" },
@@ -251,10 +253,12 @@ function DashboardScreen({
   isAnalyzing,
   diagnosis,
   selectedFileName,
+  isUploadModalOpen,
+  onUploadModalClose,
+  onPredictionComplete,
 }) {
   const onActionClick = (title) => {
     if (title === "Upload Crop Image") {
-      onTabChange("upload");
       onUploadClick();
       return;
     }
@@ -278,6 +282,12 @@ function DashboardScreen({
           accept="image/*"
           onChange={onFileChange}
           id="crop-image-input"
+        />
+
+        <UploadPhotoModal
+          isOpen={isUploadModalOpen}
+          onClose={onUploadModalClose}
+          onPredictionComplete={onPredictionComplete}
         />
 
         <header className="top-bar">
@@ -386,16 +396,13 @@ function DashboardScreen({
               Select Crop Photo
             </button>
 
-            {previewUrl ? (
-              <div className="preview-card">
-                <img src={previewUrl} alt="Selected crop" className="upload-preview" />
-              </div>
-            ) : (
-              <p className="empty-copy">Choose an image to run a mock diagnosis.</p>
+            {diagnosis && (
+              <PredictionResultCard prediction={diagnosis} />
             )}
 
-            {isAnalyzing ? <p className="analyzing-copy">Analyzing image...</p> : null}
-            <DiagnosisResultCard diagnosis={diagnosis} selectedFileName={selectedFileName} />
+            {!diagnosis && (
+              <p className="empty-copy">Click the button above and select an image to run AI diagnosis.</p>
+            )}
           </section>
         ) : null}
 
@@ -439,24 +446,16 @@ function App() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [activeTab, setActiveTab] = useState("home");
-  const [selectedFileName, setSelectedFileName] = useState("");
-  const [previewUrl, setPreviewUrl] = useState("");
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [diagnosis, setDiagnosis] = useState(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const diagnosisTimerRef = useRef(null);
 
   const sanitizedPhone = useMemo(() => phoneNumber.replace(/\D/g, ""), [phoneNumber]);
 
   useEffect(() => {
     return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-      if (diagnosisTimerRef.current) {
-        clearTimeout(diagnosisTimerRef.current);
-      }
+      // Cleanup if needed
     };
-  }, [previewUrl]);
+  }, []);
 
   const handleLoginSubmit = (event) => {
     event.preventDefault();
@@ -469,38 +468,17 @@ function App() {
     setActiveTab("home");
   };
 
-  const openUploadPicker = () => {
-    const input = document.getElementById("crop-image-input");
-    if (input) {
-      input.click();
-    }
+  const openUploadModal = () => {
+    setIsUploadModalOpen(true);
   };
 
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
+  const closeUploadModal = () => {
+    setIsUploadModalOpen(false);
+  };
 
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-
-    const newPreviewUrl = URL.createObjectURL(file);
-    setPreviewUrl(newPreviewUrl);
-    setSelectedFileName(file.name);
-    setDiagnosis(null);
-    setIsAnalyzing(true);
+  const handlePredictionComplete = (predictionResult) => {
+    setDiagnosis(predictionResult);
     setActiveTab("upload");
-
-    if (diagnosisTimerRef.current) {
-      clearTimeout(diagnosisTimerRef.current);
-    }
-
-    diagnosisTimerRef.current = setTimeout(() => {
-      setDiagnosis(runMockDiagnosis(file));
-      setIsAnalyzing(false);
-    }, 700);
   };
 
   if (!isAuthenticated) {
@@ -524,12 +502,11 @@ function App() {
     <DashboardScreen
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      onUploadClick={openUploadPicker}
-      onFileChange={handleFileChange}
-      previewUrl={previewUrl}
-      isAnalyzing={isAnalyzing}
+      onUploadClick={openUploadModal}
+      isUploadModalOpen={isUploadModalOpen}
+      onUploadModalClose={closeUploadModal}
+      onPredictionComplete={handlePredictionComplete}
       diagnosis={diagnosis}
-      selectedFileName={selectedFileName}
     />
   );
 }
