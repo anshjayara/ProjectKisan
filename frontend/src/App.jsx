@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import UploadPhotoModal from "./components/UploadPhotoModal";
 import PredictionResultCard from "./components/PredictionResultCard";
+import InsuranceClaimAssistant from "./components/InsuranceClaimAssistant";
 
 const SENSOR_READINGS = [
   { id: "moisture", label: "Soil Moisture", value: "32", unit: "%", status: "normal", icon: "SM" },
@@ -378,9 +379,9 @@ function DashboardScreen({
         {activeTab === "reports" ? (
           <section className="tab-panel">
             <div className="section-head upload-head">
-              <h2>Damage Reports</h2>
+              <h2>Insurance Claim Assistant</h2>
             </div>
-            <p className="empty-copy">Insurance-ready damage reports will appear here after field submissions.</p>
+            <InsuranceClaimAssistant />
           </section>
         ) : null}
 
