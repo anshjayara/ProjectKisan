@@ -29,15 +29,15 @@ export async function predictImage(imageFile) {
     });
   } catch (error) {
     if (error.name === "AbortError") {
-      throw new Error("Request timed out. Please check backend status and try again.");
+      throw new Error("apiErrors.timeout");
     }
-    throw new Error("Cannot reach backend API. Ensure FastAPI is running.");
+    throw new Error("apiErrors.backendUnavailable");
   } finally {
     clearTimeout(timeoutId);
   }
 
   if (!response.ok) {
-    let detail = "Failed to process image prediction";
+    let detail = "apiErrors.predictionFailed";
     try {
       const errorData = await response.json();
       detail = errorData.detail || detail;
@@ -71,11 +71,11 @@ export function getUrgencyBadgeClass(urgencyLevel) {
 export function getUrgencyLabel(urgencyLevel) {
   switch (urgencyLevel) {
     case "high":
-      return "Urgent action recommended";
+      return "prediction.urgency.high";
     case "medium":
-      return "Action recommended soon";
+      return "prediction.urgency.medium";
     case "low":
     default:
-      return "Routine care";
+      return "prediction.urgency.low";
   }
 }

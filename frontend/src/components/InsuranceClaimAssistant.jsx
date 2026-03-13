@@ -1,49 +1,97 @@
 import { useRef, useState } from "react";
-
-// ─── Constants ────────────────────────────────────────────────────────────────
+import { useLanguage } from "../context/LanguageContext";
 
 const TOTAL_STEPS = 6;
 
-const STEP_TITLES = [
-  "Your Details",
-  "Farm & Crop Details",
-  "Damage Information",
-  "Upload Evidence",
-  "Verification",
-  "Claim Summary",
+const STEP_TITLE_KEYS = [
+  "claim.yourDetails",
+  "claim.farmAndCropDetails",
+  "claim.damageInformation",
+  "claim.uploadEvidence",
+  "claim.verification",
+  "claim.claimSummary",
 ];
 
-const STEP_LABELS = ["Farmer", "Farm", "Damage", "Evidence", "Verify", "Review"];
+const STEP_LABEL_KEYS = [
+  "claim.stepLabelFarmer",
+  "claim.stepLabelFarm",
+  "claim.stepLabelDamage",
+  "claim.stepLabelEvidence",
+  "claim.stepLabelVerify",
+  "claim.stepLabelReview",
+];
 
 const DAMAGE_TYPES = [
-  { value: "flood", label: "Flood", icon: "🌊" },
-  { value: "drought", label: "Drought", icon: "☀️" },
-  { value: "pest_attack", label: "Pest Attack", icon: "🐛" },
-  { value: "disease", label: "Disease", icon: "🦠" },
-  { value: "heavy_rain", label: "Heavy Rain", icon: "🌧️" },
-  { value: "hailstorm", label: "Hailstorm", icon: "🌨️" },
-  { value: "other", label: "Other", icon: "⚠️" },
+  { value: "flood", labelKey: "claim.damageTypes.flood", icon: "🌊" },
+  { value: "drought", labelKey: "claim.damageTypes.drought", icon: "☀️" },
+  { value: "pest_attack", labelKey: "claim.damageTypes.pest_attack", icon: "🐛" },
+  { value: "disease", labelKey: "claim.damageTypes.disease", icon: "🦠" },
+  { value: "heavy_rain", labelKey: "claim.damageTypes.heavy_rain", icon: "🌧️" },
+  { value: "hailstorm", labelKey: "claim.damageTypes.hailstorm", icon: "🌨️" },
+  { value: "other", labelKey: "claim.damageTypes.other", icon: "⚠️" },
 ];
 
 const CROP_STAGES = [
-  { value: "sowing", label: "🌱 Sowing" },
-  { value: "growing", label: "🪴 Growing" },
-  { value: "flowering", label: "🌸 Flowering" },
-  { value: "harvest_ready", label: "🌾 Harvest Ready" },
+  { value: "sowing", labelKey: "claim.cropStages.sowing", icon: "🌱" },
+  { value: "growing", labelKey: "claim.cropStages.growing", icon: "🪴" },
+  { value: "flowering", labelKey: "claim.cropStages.flowering", icon: "🌸" },
+  { value: "harvest_ready", labelKey: "claim.cropStages.harvest_ready", icon: "🌾" },
+];
+
+const VERIFY_QUESTIONS = [
+  {
+    key: "withinPolicyTimeline",
+    textKey: "claim.verifyWithinTime",
+    yesKey: "claim.verifyWithinTimeYes",
+    noKey: "claim.verifyWithinTimeNo",
+  },
+  {
+    key: "reportedBefore",
+    textKey: "claim.verifyReportedBefore",
+    yesKey: "claim.verifyReportedBeforeYes",
+    noKey: "claim.verifyReportedBeforeNo",
+  },
+  {
+    key: "entireFarmAffected",
+    textKey: "claim.verifyEntireFarm",
+    yesKey: "claim.verifyEntireFarmYes",
+    noKey: "claim.verifyEntireFarmNo",
+  },
+  {
+    key: "treatmentApplied",
+    textKey: "claim.verifyTreatment",
+    yesKey: "claim.verifyTreatmentYes",
+    noKey: "claim.verifyTreatmentNo",
+  },
 ];
 
 const INITIAL_FARMER = {
-  name: "", mobile: "", village: "", district: "",
-  state: "", aadhaarId: "", policyNumber: "",
+  name: "",
+  mobile: "",
+  village: "",
+  district: "",
+  state: "",
+  aadhaarId: "",
+  policyNumber: "",
 };
+
 const INITIAL_CROP = {
-  cropName: "", cropStage: "", farmLocation: "",
-  landAreaAffected: "", damageDate: "",
+  cropName: "",
+  cropStage: "",
+  farmLocation: "",
+  landAreaAffected: "",
+  damageDate: "",
 };
+
 const INITIAL_DAMAGE = {
-  damageType: "", percentageAffected: "", description: "", isOngoing: null,
+  damageType: "",
+  percentageAffected: "",
+  description: "",
+  isOngoing: null,
 };
+
 const INITIAL_EVIDENCE = { cropPhotos: [], sensorSnapshot: null, fieldNotes: null };
+
 const INITIAL_VERIFICATION = {
   withinPolicyTimeline: null,
   reportedBefore: null,
@@ -57,15 +105,13 @@ function generateClaimId() {
   return `AGR-${year}-${random}`;
 }
 
-// ─── Shared UI Atoms ──────────────────────────────────────────────────────────
-
 function Field({ label, required, hint, children }) {
   return (
     <div className="ci-field">
       <label className="ci-field-label">
         {label}
         {required && <span className="ci-required">*</span>}
-        {hint && <span className="ci-hint"> — {hint}</span>}
+        {hint && <span className="ci-hint"> - {hint}</span>}
       </label>
       {children}
     </div>
@@ -76,19 +122,19 @@ function FieldError({ msg }) {
   return msg ? <p className="ci-error">{msg}</p> : null;
 }
 
-function YesNoRow({ value, onChange, yesLabel = "Yes", noLabel = "No" }) {
+function YesNoRow({ value, onChange, yesLabel, noLabel }) {
   return (
     <div className="ci-yn-row">
       <button
         type="button"
-        className={`ci-yn-btn${value === true ? " ci-yn-yes" : ""}`}
+        className={`ci-yn-btn ci-yn-yes${value === true ? " selected" : ""}`}
         onClick={() => onChange(true)}
       >
         {yesLabel}
       </button>
       <button
         type="button"
-        className={`ci-yn-btn${value === false ? " ci-yn-no" : ""}`}
+        className={`ci-yn-btn ci-yn-no${value === false ? " selected" : ""}`}
         onClick={() => onChange(false)}
       >
         {noLabel}
@@ -97,62 +143,59 @@ function YesNoRow({ value, onChange, yesLabel = "Yes", noLabel = "No" }) {
   );
 }
 
-function SummaryRow({ label, value }) {
+function SummaryRow({ label, value, t }) {
   return (
     <div className="ci-sum-row">
       <span className="ci-sum-label">{label}</span>
-      <span className="ci-sum-value">{value || "—"}</span>
+      <span className="ci-sum-value">{value || t("common.notAvailable")}</span>
     </div>
   );
 }
 
-// ─── Step Progress Header ─────────────────────────────────────────────────────
-
-function ClaimStepHeader({ step }) {
+function ClaimStepHeader({ step, t }) {
   return (
     <div className="ci-step-header">
-      <div className="ci-progress-track" role="list" aria-label="Claim progress">
+      <div className="ci-progress-track" role="list" aria-label={t("claim.progressAria")}>
         {Array.from({ length: TOTAL_STEPS }, (_, i) => {
           const n = i + 1;
           const done = n < step;
           const active = n === step;
           return (
-            <div key={n} className="ci-step-seg" role="listitem" aria-label={STEP_LABELS[i]}>
+            <div key={n} className="ci-step-seg" role="listitem" aria-label={t(STEP_LABEL_KEYS[i])}>
               <div
                 className={`ci-dot ${done ? "ci-dot--done" : active ? "ci-dot--active" : "ci-dot--idle"}`}
                 aria-current={active ? "step" : undefined}
               >
                 {done ? "✓" : n}
               </div>
-              {n < TOTAL_STEPS && (
-                <div className={`ci-connector ${done ? "ci-connector--done" : ""}`} />
-              )}
+              {n < TOTAL_STEPS && <div className={`ci-connector ${done ? "ci-connector--done" : ""}`} />}
             </div>
           );
         })}
       </div>
       <p className="ci-step-label">
-        Step {step} of {TOTAL_STEPS} —{" "}
-        <strong>{STEP_TITLES[step - 1]}</strong>
+        {t("claim.stepText", {
+          step,
+          total: TOTAL_STEPS,
+          title: t(STEP_TITLE_KEYS[step - 1]),
+        })}
       </p>
     </div>
   );
 }
 
-// ─── Step 1: Farmer Details ───────────────────────────────────────────────────
-
-function FarmerDetailsForm({ data, onChange, errors }) {
+function FarmerDetailsForm({ data, onChange, errors, t }) {
   const set = (key) => (e) => onChange({ ...data, [key]: e.target.value });
 
   return (
     <div className="ci-form-body">
-      <p className="ci-intro">Let's start with your basic information for the claim.</p>
+      <p className="ci-intro">{t("claim.introFarmer")}</p>
 
-      <Field label="Full Name" required>
+      <Field label={t("claim.fullName")} required>
         <input
           className={`ci-input${errors.name ? " ci-input--err" : ""}`}
           type="text"
-          placeholder="e.g. Ramesh Kumar"
+          placeholder={t("claim.fullNamePlaceholder")}
           value={data.name}
           onChange={set("name")}
           autoComplete="name"
@@ -160,13 +203,13 @@ function FarmerDetailsForm({ data, onChange, errors }) {
         <FieldError msg={errors.name} />
       </Field>
 
-      <Field label="Mobile Number" required>
+      <Field label={t("claim.mobile")} required>
         <input
           className={`ci-input${errors.mobile ? " ci-input--err" : ""}`}
           type="tel"
           inputMode="numeric"
           maxLength={10}
-          placeholder="10-digit mobile number"
+          placeholder={t("claim.mobilePlaceholder")}
           value={data.mobile}
           onChange={(e) => onChange({ ...data, mobile: e.target.value.replace(/\D/g, "").slice(0, 10) })}
           autoComplete="tel"
@@ -175,22 +218,22 @@ function FarmerDetailsForm({ data, onChange, errors }) {
       </Field>
 
       <div className="ci-row-2">
-        <Field label="Village" required>
+        <Field label={t("claim.village")} required>
           <input
             className={`ci-input${errors.village ? " ci-input--err" : ""}`}
             type="text"
-            placeholder="Village name"
+            placeholder={t("claim.villagePlaceholder")}
             value={data.village}
             onChange={set("village")}
           />
           <FieldError msg={errors.village} />
         </Field>
 
-        <Field label="District" required>
+        <Field label={t("claim.district")} required>
           <input
             className={`ci-input${errors.district ? " ci-input--err" : ""}`}
             type="text"
-            placeholder="District"
+            placeholder={t("claim.districtPlaceholder")}
             value={data.district}
             onChange={set("district")}
           />
@@ -198,32 +241,32 @@ function FarmerDetailsForm({ data, onChange, errors }) {
         </Field>
       </div>
 
-      <Field label="State" required>
+      <Field label={t("claim.state")} required>
         <input
           className={`ci-input${errors.state ? " ci-input--err" : ""}`}
           type="text"
-          placeholder="e.g. Punjab"
+          placeholder={t("claim.statePlaceholder")}
           value={data.state}
           onChange={set("state")}
         />
         <FieldError msg={errors.state} />
       </Field>
 
-      <Field label="Aadhaar / Farmer ID" hint="Optional — speeds up verification">
+      <Field label={t("claim.aadhaar")} hint={t("claim.aadhaarHint")}>
         <input
           className="ci-input"
           type="text"
-          placeholder="Aadhaar or Farmer ID"
+          placeholder={t("claim.aadhaarPlaceholder")}
           value={data.aadhaarId}
           onChange={set("aadhaarId")}
         />
       </Field>
 
-      <Field label="Insurance Policy Number" required>
+      <Field label={t("claim.policyNumber")} required>
         <input
           className={`ci-input${errors.policyNumber ? " ci-input--err" : ""}`}
           type="text"
-          placeholder="e.g. PMFBY-2024-XXXXX"
+          placeholder={t("claim.policyPlaceholder")}
           value={data.policyNumber}
           onChange={set("policyNumber")}
         />
@@ -233,27 +276,25 @@ function FarmerDetailsForm({ data, onChange, errors }) {
   );
 }
 
-// ─── Step 2: Crop Details ─────────────────────────────────────────────────────
-
-function CropDetailsForm({ data, onChange, errors }) {
+function CropDetailsForm({ data, onChange, errors, t }) {
   const set = (key) => (e) => onChange({ ...data, [key]: e.target.value });
 
   return (
     <div className="ci-form-body">
-      <p className="ci-intro">Tell us about your farm and the affected crop.</p>
+      <p className="ci-intro">{t("claim.introCrop")}</p>
 
-      <Field label="Crop Name" required>
+      <Field label={t("claim.cropName")} required>
         <input
           className={`ci-input${errors.cropName ? " ci-input--err" : ""}`}
           type="text"
-          placeholder="e.g. Wheat, Rice, Cotton"
+          placeholder={t("claim.cropNamePlaceholder")}
           value={data.cropName}
           onChange={set("cropName")}
         />
         <FieldError msg={errors.cropName} />
       </Field>
 
-      <Field label="Crop Stage" required>
+      <Field label={t("claim.cropStage")} required>
         <div className="ci-stage-grid">
           {CROP_STAGES.map((s) => (
             <button
@@ -262,36 +303,36 @@ function CropDetailsForm({ data, onChange, errors }) {
               className={`ci-stage-chip${data.cropStage === s.value ? " selected" : ""}`}
               onClick={() => onChange({ ...data, cropStage: s.value })}
             >
-              {s.label}
+              {s.icon} {t(s.labelKey)}
             </button>
           ))}
         </div>
         <FieldError msg={errors.cropStage} />
       </Field>
 
-      <Field label="Farm Location / Survey Number" required>
+      <Field label={t("claim.farmLocation")} required>
         <input
           className={`ci-input${errors.farmLocation ? " ci-input--err" : ""}`}
           type="text"
-          placeholder="e.g. Survey No. 42 or GPS coordinates"
+          placeholder={t("claim.farmLocationPlaceholder")}
           value={data.farmLocation}
           onChange={set("farmLocation")}
         />
         <FieldError msg={errors.farmLocation} />
       </Field>
 
-      <Field label="Land Area Affected" required hint="in acres or hectares">
+      <Field label={t("claim.landArea")} required hint={t("claim.landAreaHint")}>
         <input
           className={`ci-input${errors.landAreaAffected ? " ci-input--err" : ""}`}
           type="text"
-          placeholder="e.g. 2.5 acres"
+          placeholder={t("claim.landAreaPlaceholder")}
           value={data.landAreaAffected}
           onChange={set("landAreaAffected")}
         />
         <FieldError msg={errors.landAreaAffected} />
       </Field>
 
-      <Field label="Date Damage Was Noticed" required>
+      <Field label={t("claim.dateNoticed")} required>
         <input
           className={`ci-input ci-input--date${errors.damageDate ? " ci-input--err" : ""}`}
           type="date"
@@ -305,33 +346,31 @@ function CropDetailsForm({ data, onChange, errors }) {
   );
 }
 
-// ─── Step 3: Damage Details ───────────────────────────────────────────────────
-
-function DamageDetailsForm({ data, onChange, errors }) {
+function DamageDetailsForm({ data, onChange, errors, t }) {
   const set = (key) => (e) => onChange({ ...data, [key]: e.target.value });
 
   return (
     <div className="ci-form-body">
-      <p className="ci-intro">Describe the damage to your crop in detail.</p>
+      <p className="ci-intro">{t("claim.introDamage")}</p>
 
-      <Field label="Type of Damage" required>
+      <Field label={t("claim.damageType")} required>
         <div className="ci-damage-grid">
-          {DAMAGE_TYPES.map((t) => (
+          {DAMAGE_TYPES.map((item) => (
             <button
-              key={t.value}
+              key={item.value}
               type="button"
-              className={`ci-damage-chip${data.damageType === t.value ? " selected" : ""}`}
-              onClick={() => onChange({ ...data, damageType: t.value })}
+              className={`ci-damage-chip${data.damageType === item.value ? " selected" : ""}`}
+              onClick={() => onChange({ ...data, damageType: item.value })}
             >
-              <span className="ci-damage-icon">{t.icon}</span>
-              <span>{t.label}</span>
+              <span className="ci-damage-icon">{item.icon}</span>
+              <span>{t(item.labelKey)}</span>
             </button>
           ))}
         </div>
         <FieldError msg={errors.damageType} />
       </Field>
 
-      <Field label="Percentage of Crop Affected" required hint="approximate">
+      <Field label={t("claim.percentageAffected")} required hint={t("claim.percentageHint")}>
         <div className="ci-pct-wrap">
           <input
             className={`ci-input ci-input--pct${errors.percentageAffected ? " ci-input--err" : ""}`}
@@ -339,7 +378,7 @@ function DamageDetailsForm({ data, onChange, errors }) {
             inputMode="numeric"
             min="1"
             max="100"
-            placeholder="e.g. 60"
+            placeholder={t("claim.percentagePlaceholder")}
             value={data.percentageAffected}
             onChange={(e) => onChange({ ...data, percentageAffected: e.target.value })}
           />
@@ -348,23 +387,23 @@ function DamageDetailsForm({ data, onChange, errors }) {
         <FieldError msg={errors.percentageAffected} />
       </Field>
 
-      <Field label="Describe What Happened" required>
+      <Field label={t("claim.description")} required>
         <textarea
           className={`ci-textarea${errors.description ? " ci-input--err" : ""}`}
           rows={4}
-          placeholder="e.g. Heavy rains flooded the lower fields for 3 days starting on 5th March..."
+          placeholder={t("claim.descriptionPlaceholder")}
           value={data.description}
           onChange={set("description")}
         />
         <FieldError msg={errors.description} />
       </Field>
 
-      <Field label="Is the Damage Still Ongoing?" required>
+      <Field label={t("claim.isOngoing")} required>
         <YesNoRow
           value={data.isOngoing}
           onChange={(v) => onChange({ ...data, isOngoing: v })}
-          yesLabel="Yes, still happening"
-          noLabel="No, it has stopped"
+          yesLabel={t("claim.yesStill")}
+          noLabel={t("claim.noStopped")}
         />
         <FieldError msg={errors.isOngoing} />
       </Field>
@@ -372,38 +411,39 @@ function DamageDetailsForm({ data, onChange, errors }) {
   );
 }
 
-// ─── Step 4: Evidence Upload ──────────────────────────────────────────────────
-
-function EvidenceUploadSection({ data, onChange }) {
+function EvidenceUploadSection({ data, onChange, t }) {
   const cropPhotosRef = useRef(null);
   const sensorRef = useRef(null);
   const notesRef = useRef(null);
 
   const handleCropPhotos = (e) => {
-    const previews = Array.from(e.target.files).map((f) => ({
-      name: f.name,
-      url: URL.createObjectURL(f),
+    const previews = Array.from(e.target.files).map((file) => ({
+      name: file.name,
+      url: URL.createObjectURL(file),
     }));
     onChange({ ...data, cropPhotos: [...data.cropPhotos, ...previews] });
     e.target.value = "";
   };
 
-  const removePhoto = (i) =>
-    onChange({ ...data, cropPhotos: data.cropPhotos.filter((_, idx) => idx !== i) });
+  const removePhoto = (index) => {
+    onChange({ ...data, cropPhotos: data.cropPhotos.filter((_, i) => i !== index) });
+  };
 
   const handleSingleFile = (key, e) => {
     const file = e.target.files[0];
-    if (file) onChange({ ...data, [key]: { name: file.name } });
+    if (file) {
+      onChange({ ...data, [key]: { name: file.name } });
+    }
     e.target.value = "";
   };
 
   return (
     <div className="ci-form-body">
-      <p className="ci-intro">Add photos and documents that support your claim.</p>
+      <p className="ci-intro">{t("claim.introEvidence")}</p>
 
       <div className="ci-field">
         <label className="ci-field-label">
-          Crop Photos <span className="ci-required">*</span>
+          {t("claim.cropPhotos")} <span className="ci-required">*</span>
         </label>
         <button
           type="button"
@@ -411,7 +451,7 @@ function EvidenceUploadSection({ data, onChange }) {
           onClick={() => cropPhotosRef.current?.click()}
         >
           <span className="ci-upload-icon">📷</span>
-          <span>Tap to add crop photos</span>
+          <span>{t("claim.tapAddPhotos")}</span>
         </button>
         <input
           ref={cropPhotosRef}
@@ -421,20 +461,21 @@ function EvidenceUploadSection({ data, onChange }) {
           className="hidden-input"
           onChange={handleCropPhotos}
         />
+
         {data.cropPhotos.length > 0 && (
           <div className="ci-photo-grid">
-            {data.cropPhotos.map((p, i) => (
-              <div key={i} className="ci-photo-item">
-                <img src={p.url} alt={p.name} className="ci-photo-thumb" />
+            {data.cropPhotos.map((photo, index) => (
+              <div key={`${photo.name}-${index}`} className="ci-photo-item">
+                <img src={photo.url} alt={photo.name} className="ci-photo-thumb" />
                 <button
                   type="button"
                   className="ci-photo-remove"
-                  onClick={() => removePhoto(i)}
-                  aria-label="Remove photo"
+                  onClick={() => removePhoto(index)}
+                  aria-label={t("claim.removePhotoAria")}
                 >
                   ✕
                 </button>
-                <p className="ci-photo-name">{p.name}</p>
+                <p className="ci-photo-name">{photo.name}</p>
               </div>
             ))}
           </div>
@@ -443,8 +484,7 @@ function EvidenceUploadSection({ data, onChange }) {
 
       <div className="ci-field">
         <label className="ci-field-label">
-          Sensor Report / Snapshot{" "}
-          <span className="ci-optional">(Optional)</span>
+          {t("claim.sensorReport")} <span className="ci-optional">({t("common.optional")})</span>
         </label>
         <button
           type="button"
@@ -452,7 +492,7 @@ function EvidenceUploadSection({ data, onChange }) {
           onClick={() => sensorRef.current?.click()}
         >
           <span className="ci-upload-icon">📊</span>
-          <span>{data.sensorSnapshot ? `✓ ${data.sensorSnapshot.name}` : "Upload sensor report"}</span>
+          <span>{data.sensorSnapshot ? `✓ ${data.sensorSnapshot.name}` : t("claim.uploadSensorReport")}</span>
         </button>
         <input
           ref={sensorRef}
@@ -465,8 +505,7 @@ function EvidenceUploadSection({ data, onChange }) {
 
       <div className="ci-field">
         <label className="ci-field-label">
-          Field Notes / Documents{" "}
-          <span className="ci-optional">(Optional)</span>
+          {t("claim.fieldNotes")} <span className="ci-optional">({t("common.optional")})</span>
         </label>
         <button
           type="button"
@@ -474,7 +513,7 @@ function EvidenceUploadSection({ data, onChange }) {
           onClick={() => notesRef.current?.click()}
         >
           <span className="ci-upload-icon">📄</span>
-          <span>{data.fieldNotes ? `✓ ${data.fieldNotes.name}` : "Upload field notes or documents"}</span>
+          <span>{data.fieldNotes ? `✓ ${data.fieldNotes.name}` : t("claim.uploadFieldNotes")}</span>
         </button>
         <input
           ref={notesRef}
@@ -488,86 +527,60 @@ function EvidenceUploadSection({ data, onChange }) {
   );
 }
 
-// ─── Step 5: Verification Questions ──────────────────────────────────────────
-
-const VERIFY_QUESTIONS = [
-  {
-    key: "withinPolicyTimeline",
-    text: "Is this damage reported within your policy's allowed time?",
-    yes: "Yes, within timeline",
-    no: "No / Not sure",
-  },
-  {
-    key: "reportedBefore",
-    text: "Has this damage been reported to the insurer before?",
-    yes: "Yes, reported before",
-    no: "No, first time",
-  },
-  {
-    key: "entireFarmAffected",
-    text: "Is the entire farm affected, or only one section?",
-    yes: "Entire farm",
-    no: "Only a section",
-  },
-  {
-    key: "treatmentApplied",
-    text: "Have you already applied any treatment to save the crop?",
-    yes: "Yes, applied treatment",
-    no: "Not yet",
-  },
-];
-
-function VerificationForm({ data, onChange, errors }) {
+function VerificationForm({ data, onChange, errors, t }) {
   return (
     <div className="ci-form-body">
-      <p className="ci-intro">A few quick questions to complete your claim information.</p>
+      <p className="ci-intro">{t("claim.introVerify")}</p>
 
-      {VERIFY_QUESTIONS.map(({ key, text, yes, no }) => (
-        <div key={key} className="ci-verify-card">
-          <p className="ci-verify-q">{text}</p>
+      {VERIFY_QUESTIONS.map((question) => (
+        <div key={question.key} className="ci-verify-card">
+          <p className="ci-verify-q">{t(question.textKey)}</p>
           <YesNoRow
-            value={data[key]}
-            onChange={(v) => onChange({ ...data, [key]: v })}
-            yesLabel={yes}
-            noLabel={no}
+            value={data[question.key]}
+            onChange={(value) => onChange({ ...data, [question.key]: value })}
+            yesLabel={t(question.yesKey)}
+            noLabel={t(question.noKey)}
           />
-          <FieldError msg={errors[key]} />
+          <FieldError msg={errors[question.key]} />
         </div>
       ))}
     </div>
   );
 }
 
-// ─── Step 6: Claim Summary ────────────────────────────────────────────────────
-
-function ClaimSummaryCard({ formData, onSubmit, isSubmitting }) {
+function ClaimSummaryCard({ formData, onSubmit, isSubmitting, t }) {
   const { farmer, crop, damage, evidence } = formData;
 
-  const damageLabel = DAMAGE_TYPES.find((d) => d.value === damage.damageType)?.label || damage.damageType;
-  const stageLabel = CROP_STAGES.find((s) => s.value === crop.cropStage)?.label || crop.cropStage;
+  const damageLabel = DAMAGE_TYPES.find((item) => item.value === damage.damageType)
+    ? t(DAMAGE_TYPES.find((item) => item.value === damage.damageType).labelKey)
+    : damage.damageType;
+
+  const stageLabel = CROP_STAGES.find((item) => item.value === crop.cropStage)
+    ? t(CROP_STAGES.find((item) => item.value === crop.cropStage).labelKey)
+    : crop.cropStage;
 
   const missing = [];
-  if (!farmer.name) missing.push("Farmer Name");
-  if (!farmer.policyNumber) missing.push("Policy Number");
-  if (!crop.cropName) missing.push("Crop Name");
-  if (!damage.damageType) missing.push("Damage Type");
-  if (!damage.description) missing.push("Damage Description");
-  if (evidence.cropPhotos.length === 0) missing.push("At least one crop photo");
+  if (!farmer.name) missing.push(t("claim.missing.farmerName"));
+  if (!farmer.policyNumber) missing.push(t("claim.missing.policyNumber"));
+  if (!crop.cropName) missing.push(t("claim.missing.cropName"));
+  if (!damage.damageType) missing.push(t("claim.missing.damageType"));
+  if (!damage.description) missing.push(t("claim.missing.damageDescription"));
+  if (evidence.cropPhotos.length === 0) missing.push(t("claim.missing.onePhoto"));
 
   const readiness = Math.max(10, 100 - missing.length * 16);
 
   return (
     <div className="ci-form-body">
-      <p className="ci-intro">Review your claim details before submitting.</p>
+      <p className="ci-intro">{t("claim.introSummary")}</p>
 
       {missing.length > 0 && (
         <div className="ci-missing-banner" role="alert">
           <span className="ci-missing-icon">⚠️</span>
           <div>
-            <p className="ci-missing-title">Some recommended fields are missing</p>
+            <p className="ci-missing-title">{t("claim.missingFieldsTitle")}</p>
             <ul className="ci-missing-list">
-              {missing.map((f) => (
-                <li key={f}>{f}</li>
+              {missing.map((item) => (
+                <li key={item}>{item}</li>
               ))}
             </ul>
           </div>
@@ -575,66 +588,70 @@ function ClaimSummaryCard({ formData, onSubmit, isSubmitting }) {
       )}
 
       <div className="ci-sum-section">
-        <p className="ci-sum-heading">Farmer Details</p>
-        <SummaryRow label="Name" value={farmer.name} />
-        <SummaryRow label="Mobile" value={farmer.mobile} />
+        <p className="ci-sum-heading">{t("claim.sectionFarmer")}</p>
+        <SummaryRow label={t("claim.name")} value={farmer.name} t={t} />
+        <SummaryRow label={t("claim.mobile")} value={farmer.mobile} t={t} />
         <SummaryRow
-          label="Location"
+          label={t("claim.location")}
           value={[farmer.village, farmer.district, farmer.state].filter(Boolean).join(", ")}
+          t={t}
         />
-        <SummaryRow label="Policy No." value={farmer.policyNumber} />
-        {farmer.aadhaarId && <SummaryRow label="Aadhaar / ID" value={farmer.aadhaarId} />}
+        <SummaryRow label={t("claim.policyNo")} value={farmer.policyNumber} t={t} />
+        {farmer.aadhaarId ? <SummaryRow label={t("claim.aadhaar")} value={farmer.aadhaarId} t={t} /> : null}
       </div>
 
       <div className="ci-sum-section">
-        <p className="ci-sum-heading">Farm &amp; Crop</p>
-        <SummaryRow label="Crop" value={crop.cropName} />
-        <SummaryRow label="Stage" value={stageLabel} />
-        <SummaryRow label="Location" value={crop.farmLocation} />
-        <SummaryRow label="Area Affected" value={crop.landAreaAffected} />
-        <SummaryRow label="Date Noticed" value={crop.damageDate} />
+        <p className="ci-sum-heading">{t("claim.sectionFarm")}</p>
+        <SummaryRow label={t("claim.cropName")} value={crop.cropName} t={t} />
+        <SummaryRow label={t("claim.stage")} value={stageLabel} t={t} />
+        <SummaryRow label={t("claim.location")} value={crop.farmLocation} t={t} />
+        <SummaryRow label={t("claim.areaAffected")} value={crop.landAreaAffected} t={t} />
+        <SummaryRow label={t("claim.dateNoticed")} value={crop.damageDate} t={t} />
       </div>
 
       <div className="ci-sum-section">
-        <p className="ci-sum-heading">Damage Details</p>
-        <SummaryRow label="Type" value={damageLabel} />
+        <p className="ci-sum-heading">{t("claim.sectionDamage")}</p>
+        <SummaryRow label={t("claim.type")} value={damageLabel} t={t} />
         <SummaryRow
-          label="Affected"
+          label={t("claim.affected")}
           value={damage.percentageAffected ? `${damage.percentageAffected}%` : ""}
+          t={t}
         />
         <SummaryRow
-          label="Ongoing"
-          value={damage.isOngoing === true ? "Yes" : damage.isOngoing === false ? "No" : ""}
+          label={t("claim.ongoing")}
+          value={damage.isOngoing === true ? t("common.yes") : damage.isOngoing === false ? t("common.no") : ""}
+          t={t}
         />
-        <SummaryRow label="Description" value={damage.description} />
+        <SummaryRow label={t("claim.description")} value={damage.description} t={t} />
       </div>
 
       <div className="ci-sum-section">
-        <p className="ci-sum-heading">Evidence</p>
+        <p className="ci-sum-heading">{t("claim.sectionEvidence")}</p>
         <SummaryRow
-          label="Photos"
-          value={`${evidence.cropPhotos.length} photo(s) uploaded`}
+          label={t("claim.photos")}
+          value={t("claim.photosUploaded", { count: evidence.cropPhotos.length })}
+          t={t}
         />
         <SummaryRow
-          label="Sensor Report"
-          value={evidence.sensorSnapshot ? evidence.sensorSnapshot.name : "Not uploaded"}
+          label={t("claim.sensorReport")}
+          value={evidence.sensorSnapshot ? evidence.sensorSnapshot.name : t("claim.notUploaded")}
+          t={t}
         />
         <SummaryRow
-          label="Field Notes"
-          value={evidence.fieldNotes ? evidence.fieldNotes.name : "Not uploaded"}
+          label={t("claim.fieldNotes")}
+          value={evidence.fieldNotes ? evidence.fieldNotes.name : t("claim.notUploaded")}
+          t={t}
         />
       </div>
 
       <div className="ci-sum-section">
-        <p className="ci-sum-heading">Claim Readiness</p>
+        <p className="ci-sum-heading">{t("claim.sectionReadiness")}</p>
         <div className="ci-readiness">
           <div className="ci-readiness-bar">
             <div className="ci-readiness-fill" style={{ width: `${readiness}%` }} />
           </div>
           <p className="ci-readiness-label">
-            {missing.length === 0
-              ? "Ready to submit ✓"
-              : `${missing.length} recommended item(s) missing`}
+            {missing.length === 0 ? t("claim.readyToSubmit") : t("claim.missingItems", { count: missing.length })}
           </p>
         </div>
       </div>
@@ -649,63 +666,58 @@ function ClaimSummaryCard({ formData, onSubmit, isSubmitting }) {
           {isSubmitting ? (
             <span className="ci-submitting">
               <span className="ci-spinner" />
-              Submitting claim…
+              {t("claim.submitting")}
             </span>
           ) : (
-            "Submit to Insurance Company"
+            t("claim.submitInsurance")
           )}
         </button>
-        <p className="ci-submit-note">
-          This will generate a claim reference ID and send your report.
-        </p>
+        <p className="ci-submit-note">{t("claim.submitNote")}</p>
       </div>
     </div>
   );
 }
 
-// ─── Success Screen ───────────────────────────────────────────────────────────
-
-function ClaimSuccessScreen({ claimId, submittedAt, formData, onNewClaim }) {
+function ClaimSuccessScreen({ claimId, submittedAt, formData, onNewClaim, t }) {
   const { farmer, crop, damage } = formData;
-  const damageLabel = DAMAGE_TYPES.find((d) => d.value === damage.damageType)?.label || damage.damageType;
+  const damageLabel = DAMAGE_TYPES.find((item) => item.value === damage.damageType)
+    ? t(DAMAGE_TYPES.find((item) => item.value === damage.damageType).labelKey)
+    : damage.damageType;
 
   return (
     <div className="ci-success">
       <div className="ci-success-check" aria-hidden="true">✓</div>
-      <h2 className="ci-success-title">Claim Submitted!</h2>
-      <p className="ci-success-sub">
-        Your insurance claim has been sent successfully. You will receive a confirmation SMS on{" "}
-        <strong>{farmer.mobile}</strong>.
-      </p>
+      <h2 className="ci-success-title">{t("claim.claimSubmitted")}</h2>
+      <p className="ci-success-sub">{t("claim.successMessage", { phone: farmer.mobile })}</p>
 
       <div className="ci-id-card">
-        <p className="ci-id-label">Claim Reference ID</p>
+        <p className="ci-id-label">{t("claim.claimReferenceId")}</p>
         <p className="ci-id-value">{claimId}</p>
-        <p className="ci-id-time">Submitted: {submittedAt}</p>
+        <p className="ci-id-time">{t("claim.submittedAt", { time: submittedAt })}</p>
       </div>
 
       <div className="ci-sum-section" style={{ width: "100%" }}>
-        <p className="ci-sum-heading">Claim Report</p>
-        <SummaryRow label="Farmer" value={farmer.name} />
-        <SummaryRow label="Policy No." value={farmer.policyNumber} />
-        <SummaryRow label="Crop" value={crop.cropName} />
-        <SummaryRow label="Area" value={crop.landAreaAffected} />
-        <SummaryRow label="Damage" value={damageLabel} />
-        <SummaryRow label="Date Noticed" value={crop.damageDate} />
-        <SummaryRow label="Claim ID" value={claimId} />
-        <SummaryRow label="Submitted At" value={submittedAt} />
+        <p className="ci-sum-heading">{t("claim.claimReport")}</p>
+        <SummaryRow label={t("claim.farmer")} value={farmer.name} t={t} />
+        <SummaryRow label={t("claim.policyNo")} value={farmer.policyNumber} t={t} />
+        <SummaryRow label={t("claim.cropName")} value={crop.cropName} t={t} />
+        <SummaryRow label={t("claim.area")} value={crop.landAreaAffected} t={t} />
+        <SummaryRow label={t("claim.damageType")} value={damageLabel} t={t} />
+        <SummaryRow label={t("claim.dateNoticed")} value={crop.damageDate} t={t} />
+        <SummaryRow label={t("claim.claimId")} value={claimId} t={t} />
+        <SummaryRow label={t("claim.submittedAtLabel")} value={submittedAt} t={t} />
       </div>
 
       <button type="button" className="ci-new-btn" onClick={onNewClaim}>
-        File Another Claim
+        {t("claim.fileAnotherClaim")}
       </button>
     </div>
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 export default function InsuranceClaimAssistant() {
+  const { t, language } = useLanguage();
+
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [claimId, setClaimId] = useState(null);
@@ -722,68 +734,72 @@ export default function InsuranceClaimAssistant() {
   const formData = { farmer, crop, damage, evidence, verification };
 
   const validate = () => {
-    const e = {};
+    const nextErrors = {};
 
     if (step === 1) {
-      if (!farmer.name.trim()) e.name = "Please enter your full name.";
-      if (farmer.mobile.length !== 10) e.mobile = "Enter a valid 10-digit mobile number.";
-      if (!farmer.village.trim()) e.village = "Village is required.";
-      if (!farmer.district.trim()) e.district = "District is required.";
-      if (!farmer.state.trim()) e.state = "State is required.";
-      if (!farmer.policyNumber.trim()) e.policyNumber = "Policy number is required.";
+      if (!farmer.name.trim()) nextErrors.name = t("claim.errors.fullName");
+      if (farmer.mobile.length !== 10) nextErrors.mobile = t("claim.errors.validMobile");
+      if (!farmer.village.trim()) nextErrors.village = t("claim.errors.villageRequired");
+      if (!farmer.district.trim()) nextErrors.district = t("claim.errors.districtRequired");
+      if (!farmer.state.trim()) nextErrors.state = t("claim.errors.stateRequired");
+      if (!farmer.policyNumber.trim()) nextErrors.policyNumber = t("claim.errors.policyRequired");
     }
 
     if (step === 2) {
-      if (!crop.cropName.trim()) e.cropName = "Crop name is required.";
-      if (!crop.cropStage) e.cropStage = "Please select the crop stage.";
-      if (!crop.farmLocation.trim()) e.farmLocation = "Farm location is required.";
-      if (!crop.landAreaAffected.trim()) e.landAreaAffected = "Land area is required.";
-      if (!crop.damageDate) e.damageDate = "Please enter the date damage was noticed.";
+      if (!crop.cropName.trim()) nextErrors.cropName = t("claim.errors.cropRequired");
+      if (!crop.cropStage) nextErrors.cropStage = t("claim.errors.stageRequired");
+      if (!crop.farmLocation.trim()) nextErrors.farmLocation = t("claim.errors.farmLocationRequired");
+      if (!crop.landAreaAffected.trim()) nextErrors.landAreaAffected = t("claim.errors.landAreaRequired");
+      if (!crop.damageDate) nextErrors.damageDate = t("claim.errors.dateRequired");
     }
 
     if (step === 3) {
-      if (!damage.damageType) e.damageType = "Please select the type of damage.";
-      const pct = Number(damage.percentageAffected);
-      if (!damage.percentageAffected || pct < 1 || pct > 100)
-        e.percentageAffected = "Enter a valid percentage (1–100).";
-      if (!damage.description.trim()) e.description = "Please describe what happened.";
-      if (damage.isOngoing === null) e.isOngoing = "Please select an option.";
+      if (!damage.damageType) nextErrors.damageType = t("claim.errors.damageTypeRequired");
+      const percentage = Number(damage.percentageAffected);
+      if (!damage.percentageAffected || percentage < 1 || percentage > 100) {
+        nextErrors.percentageAffected = t("claim.errors.validPercentage");
+      }
+      if (!damage.description.trim()) nextErrors.description = t("claim.errors.describeDamage");
+      if (damage.isOngoing === null) nextErrors.isOngoing = t("claim.errors.selectOption");
     }
 
     if (step === 5) {
-      if (verification.withinPolicyTimeline === null) e.withinPolicyTimeline = "Please answer this question.";
-      if (verification.reportedBefore === null) e.reportedBefore = "Please answer this question.";
-      if (verification.entireFarmAffected === null) e.entireFarmAffected = "Please answer this question.";
-      if (verification.treatmentApplied === null) e.treatmentApplied = "Please answer this question.";
+      if (verification.withinPolicyTimeline === null) nextErrors.withinPolicyTimeline = t("claim.errors.answerQuestion");
+      if (verification.reportedBefore === null) nextErrors.reportedBefore = t("claim.errors.answerQuestion");
+      if (verification.entireFarmAffected === null) nextErrors.entireFarmAffected = t("claim.errors.answerQuestion");
+      if (verification.treatmentApplied === null) nextErrors.treatmentApplied = t("claim.errors.answerQuestion");
     }
 
-    setErrors(e);
-    return Object.keys(e).length === 0;
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
   const handleNext = () => {
-    if (!validate()) return;
+    if (!validate()) {
+      return;
+    }
     setErrors({});
-    setStep((s) => Math.min(s + 1, TOTAL_STEPS));
+    setStep((current) => Math.min(current + 1, TOTAL_STEPS));
   };
 
   const handleBack = () => {
     setErrors({});
-    setStep((s) => Math.max(s - 1, 1));
+    setStep((current) => Math.max(current - 1, 1));
   };
 
   const handleSubmit = () => {
     setIsSubmitting(true);
-    // Mock insurance API call
+
     setTimeout(() => {
       const id = generateClaimId();
-      const at = new Date().toLocaleString("en-IN", {
+      const at = new Date().toLocaleString(language === "hi" ? "hi-IN" : "en-IN", {
         day: "2-digit",
         month: "short",
         year: "numeric",
         hour: "2-digit",
         minute: "2-digit",
       });
+
       setClaimId(id);
       setSubmittedAt(at);
       setSubmitted(true);
@@ -811,50 +827,42 @@ export default function InsuranceClaimAssistant() {
         submittedAt={submittedAt}
         formData={formData}
         onNewClaim={handleNewClaim}
+        t={t}
       />
     );
   }
 
   const renderStep = () => {
-    switch (step) {
-      case 1: return <FarmerDetailsForm data={farmer} onChange={setFarmer} errors={errors} />;
-      case 2: return <CropDetailsForm data={crop} onChange={setCrop} errors={errors} />;
-      case 3: return <DamageDetailsForm data={damage} onChange={setDamage} errors={errors} />;
-      case 4: return <EvidenceUploadSection data={evidence} onChange={setEvidence} />;
-      case 5: return <VerificationForm data={verification} onChange={setVerification} errors={errors} />;
-      case 6: return (
-        <ClaimSummaryCard
-          formData={formData}
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-        />
-      );
-      default: return null;
-    }
+    if (step === 1) return <FarmerDetailsForm data={farmer} onChange={setFarmer} errors={errors} t={t} />;
+    if (step === 2) return <CropDetailsForm data={crop} onChange={setCrop} errors={errors} t={t} />;
+    if (step === 3) return <DamageDetailsForm data={damage} onChange={setDamage} errors={errors} t={t} />;
+    if (step === 4) return <EvidenceUploadSection data={evidence} onChange={setEvidence} t={t} />;
+    if (step === 5) return <VerificationForm data={verification} onChange={setVerification} errors={errors} t={t} />;
+    return <ClaimSummaryCard formData={formData} onSubmit={handleSubmit} isSubmitting={isSubmitting} t={t} />;
   };
 
   return (
     <div className="ci-container">
-      <ClaimStepHeader step={step} />
+      <ClaimStepHeader step={step} t={t} />
 
       <div className="ci-card">
         {renderStep()}
       </div>
 
-      {step < 6 && (
+      {step < 6 ? (
         <div className="ci-nav-row">
           {step > 1 ? (
             <button type="button" className="ci-back-btn" onClick={handleBack}>
-              ← Back
+              {t("claim.back")}
             </button>
           ) : (
             <div />
           )}
           <button type="button" className="ci-next-btn" onClick={handleNext}>
-            {step === 5 ? "Review Claim →" : "Next →"}
+            {step === 5 ? t("claim.reviewClaim") : t("claim.next")}
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
