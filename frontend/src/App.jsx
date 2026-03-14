@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import UploadPhotoModal from "./components/UploadPhotoModal";
 import PredictionResultCard from "./components/PredictionResultCard";
 import InsuranceClaimAssistant from "./components/InsuranceClaimAssistant";
+import ProtectedRoute from "./components/ProtectedRoute";
 import VoiceInputButton from "./components/VoiceInputButton";
 import { generateDashboardData } from "./utils/dashboardMockData";
 import LanguageSelectionScreen from "./components/LanguageSelectionScreen";
+import { useAuth } from "./context/AuthContext";
 import { useLanguage } from "./context/LanguageContext";
 
 function formatAudioDuration(durationMs = 0) {
@@ -152,7 +154,67 @@ function BottomNavigation({ activeTab, onTabChange, t }) {
   );
 }
 
-function LoginScreen({ phoneNumber, onPhoneChange, onSubmit, errorKey, t }) {
+function AuthScreen({ isSubmitting, serverErrorKey, onLogin, onRegister, t }) {
+  const [mode, setMode] = useState("login");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [localErrorKey, setLocalErrorKey] = useState("");
+
+  const sanitizedPhone = useMemo(() => phone.replace(/\D/g, "").slice(0, 10), [phone]);
+
+  const switchMode = (nextMode) => {
+    setMode(nextMode);
+    setLocalErrorKey("");
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setLocalErrorKey("");
+
+    if (!sanitizedPhone || sanitizedPhone.length !== 10) {
+      setLocalErrorKey("auth.errors.invalidPhone");
+      return;
+    }
+
+    if (!password || password.length < 8) {
+      setLocalErrorKey("auth.errors.passwordMin");
+      return;
+    }
+
+    if (mode === "register") {
+      if (!fullName.trim()) {
+        setLocalErrorKey("auth.errors.fullNameRequired");
+        return;
+      }
+
+      if (!confirmPassword) {
+        setLocalErrorKey("auth.errors.confirmPasswordRequired");
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setLocalErrorKey("auth.errors.passwordMismatch");
+        return;
+      }
+
+      await onRegister({
+        full_name: fullName.trim(),
+        phone: sanitizedPhone,
+        password,
+      });
+      return;
+    }
+
+    await onLogin({
+      phone: sanitizedPhone,
+      password,
+    });
+  };
+
+  const activeErrorKey = localErrorKey || serverErrorKey;
+
   return (
     <div className="app-shell">
       <div className="top-strip" aria-hidden="true" />
@@ -170,7 +232,42 @@ function LoginScreen({ phoneNumber, onPhoneChange, onSubmit, errorKey, t }) {
           </p>
         </section>
 
-        <form className="login-form" onSubmit={onSubmit} noValidate>
+        <section className="auth-tabs" aria-label={t("auth.tabsAria")}>
+          <button
+            type="button"
+            className={`auth-tab-btn${mode === "login" ? " active" : ""}`}
+            onClick={() => switchMode("login")}
+          >
+            {t("auth.loginTab")}
+          </button>
+          <button
+            type="button"
+            className={`auth-tab-btn${mode === "register" ? " active" : ""}`}
+            onClick={() => switchMode("register")}
+          >
+            {t("auth.registerTab")}
+          </button>
+        </section>
+
+        <form className="login-form" onSubmit={handleSubmit} noValidate>
+          {mode === "register" ? (
+            <>
+              <label htmlFor="fullName" className="field-label">
+                {t("auth.fullNameLabel")}
+              </label>
+              <div className="input-wrap">
+                <input
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(event) => setFullName(event.target.value)}
+                  placeholder={t("auth.fullNamePlaceholder")}
+                  autoComplete="name"
+                />
+              </div>
+            </>
+          ) : null}
+
           <label htmlFor="phone" className="field-label">
             {t("auth.phoneLabel")}
           </label>
@@ -185,18 +282,66 @@ function LoginScreen({ phoneNumber, onPhoneChange, onSubmit, errorKey, t }) {
               type="tel"
               inputMode="numeric"
               maxLength={10}
-              value={phoneNumber}
-              onChange={(event) => onPhoneChange(event.target.value)}
+              value={sanitizedPhone}
+              onChange={(event) => setPhone(event.target.value)}
               placeholder={t("auth.phonePlaceholder")}
+              autoComplete="tel-national"
             />
           </div>
 
-          <p className="helper-text">{t("auth.helperText")}</p>
-          {errorKey ? <p className="form-error">{t(errorKey)}</p> : null}
+          <label htmlFor="password" className="field-label">
+            {t("auth.passwordLabel")}
+          </label>
+          <div className="input-wrap">
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder={t("auth.passwordPlaceholder")}
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+            />
+          </div>
 
-          <button type="submit" className="cta-button">
-            {t("auth.getStarted")}
+          {mode === "register" ? (
+            <>
+              <label htmlFor="confirmPassword" className="field-label">
+                {t("auth.confirmPasswordLabel")}
+              </label>
+              <div className="input-wrap">
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder={t("auth.confirmPasswordPlaceholder")}
+                  autoComplete="new-password"
+                />
+              </div>
+            </>
+          ) : null}
+
+          <p className="helper-text">{t("auth.helperText")}</p>
+          {activeErrorKey ? <p className="form-error">{t(activeErrorKey)}</p> : null}
+
+          <button type="submit" className="cta-button" disabled={isSubmitting}>
+            {isSubmitting
+              ? t("auth.loading")
+              : mode === "login"
+                ? t("auth.loginButton")
+                : t("auth.registerButton")}
           </button>
+
+          <p className="auth-switch-row">
+            {mode === "login" ? t("auth.noAccount") : t("auth.haveAccount")}{" "}
+            <button
+              type="button"
+              className="auth-link-button"
+              onClick={() => switchMode(mode === "login" ? "register" : "login")}
+            >
+              {mode === "login" ? t("auth.registerTab") : t("auth.loginTab")}
+            </button>
+          </p>
         </form>
 
         <footer className="screen-footer">
@@ -225,6 +370,7 @@ function DashboardScreen({
   alerts,
   language,
   onLanguageChange,
+  onLogout,
   t,
 }) {
   const primarySensors = sensorReadings.slice(0, 4);
@@ -241,6 +387,9 @@ function DashboardScreen({
         />
 
         <header className="top-bar">
+          <button type="button" className="logout-btn" onClick={onLogout}>
+            {t("auth.logoutButton")}
+          </button>
           <h1>{t("common.appName")}</h1>
           <div className="language-toggle" aria-label={t("common.language.switchLabel")}>
             <button
@@ -423,9 +572,15 @@ function DashboardScreen({
 
 function App() {
   const { language, setLanguage, t, isReady, hasSelectedLanguage } = useLanguage();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [phoneErrorKey, setPhoneErrorKey] = useState("");
+  const {
+    isAuthenticated,
+    isLoadingAuth,
+    authError,
+    setAuthError,
+    login,
+    register,
+    logout,
+  } = useAuth();
   const [activeTab, setActiveTab] = useState("home");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [diagnosis, setDiagnosis] = useState(null);
@@ -433,8 +588,7 @@ function App() {
   const [sensorData, setSensorData] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [alerts, setAlerts] = useState([]);
-
-  const sanitizedPhone = useMemo(() => phoneNumber.replace(/\D/g, ""), [phoneNumber]);
+  const [authSubmitting, setAuthSubmitting] = useState(false);
 
   useEffect(() => {
     const generated = generateDashboardData();
@@ -449,15 +603,30 @@ function App() {
     }
   }, [recordedAudio]);
 
-  const handleLoginSubmit = (event) => {
-    event.preventDefault();
-    if (sanitizedPhone.length !== 10) {
-      setPhoneErrorKey("auth.phoneError");
-      return;
+  const handleLoginSubmit = async ({ phone, password }) => {
+    setAuthSubmitting(true);
+    setAuthError("");
+    try {
+      await login({ phone, password });
+      setActiveTab("home");
+    } catch (error) {
+      setAuthError(error?.message || "auth.errors.requestFailed");
+    } finally {
+      setAuthSubmitting(false);
     }
-    setPhoneErrorKey("");
-    setIsAuthenticated(true);
-    setActiveTab("home");
+  };
+
+  const handleRegisterSubmit = async ({ full_name, phone, password }) => {
+    setAuthSubmitting(true);
+    setAuthError("");
+    try {
+      await register({ full_name, phone, password });
+      setActiveTab("home");
+    } catch (error) {
+      setAuthError(error?.message || "auth.errors.requestFailed");
+    } finally {
+      setAuthSubmitting(false);
+    }
   };
 
   const openUploadModal = () => {
@@ -486,42 +655,42 @@ function App() {
     return <LanguageSelectionScreen />;
   }
 
-  if (!isAuthenticated) {
-    return (
-      <LoginScreen
-        phoneNumber={phoneNumber}
-        onPhoneChange={(value) => {
-          const nextValue = value.replace(/\D/g, "").slice(0, 10);
-          setPhoneNumber(nextValue);
-          if (phoneErrorKey) {
-            setPhoneErrorKey("");
-          }
-        }}
-        onSubmit={handleLoginSubmit}
-        errorKey={phoneErrorKey}
-        t={t}
-      />
-    );
+  if (isLoadingAuth) {
+    return null;
   }
 
   return (
-    <DashboardScreen
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
-      onUploadClick={openUploadModal}
-      onAudioCaptured={handleAudioCaptured}
-      isUploadModalOpen={isUploadModalOpen}
-      onUploadModalClose={closeUploadModal}
-      onPredictionComplete={handlePredictionComplete}
-      diagnosis={diagnosis}
-      recordedAudio={recordedAudio}
-      sensorReadings={sensorData}
-      suggestions={suggestions}
-      alerts={alerts}
-      language={language}
-      onLanguageChange={setLanguage}
-      t={t}
-    />
+    <ProtectedRoute
+      isAuthenticated={isAuthenticated}
+      fallback={(
+        <AuthScreen
+          isSubmitting={authSubmitting}
+          serverErrorKey={authError}
+          onLogin={handleLoginSubmit}
+          onRegister={handleRegisterSubmit}
+          t={t}
+        />
+      )}
+    >
+      <DashboardScreen
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onUploadClick={openUploadModal}
+        onAudioCaptured={handleAudioCaptured}
+        isUploadModalOpen={isUploadModalOpen}
+        onUploadModalClose={closeUploadModal}
+        onPredictionComplete={handlePredictionComplete}
+        diagnosis={diagnosis}
+        recordedAudio={recordedAudio}
+        sensorReadings={sensorData}
+        suggestions={suggestions}
+        alerts={alerts}
+        language={language}
+        onLanguageChange={setLanguage}
+        onLogout={logout}
+        t={t}
+      />
+    </ProtectedRoute>
   );
 }
 

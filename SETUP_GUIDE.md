@@ -52,7 +52,8 @@ npm run dev
    - Backend: Running on port 8000
 
 2. **Login**
-   - Enter any 10-digit phone number (e.g., 9876543210)
+  - If new user: open Register tab and create account with full name, phone number, and password
+  - If existing user: login with registered phone number and password
 
 3. **Upload Photo**
    - Home tab → Click "Upload Crop Photo for AI Confirmation" button
@@ -128,6 +129,47 @@ ProjectKisan/
 ```
 
 ## API Endpoints
+
+### Authentication Endpoints
+
+**POST** `/api/auth/register`
+
+**Request:**
+```json
+{
+  "full_name": "Ramesh Kumar",
+  "phone": "9876543210",
+  "password": "your-secure-password"
+}
+```
+
+**POST** `/api/auth/login`
+
+**Request:**
+```json
+{
+  "phone": "9876543210",
+  "password": "your-secure-password"
+}
+```
+
+**GET** `/api/auth/me`
+
+**Headers:**
+```text
+Authorization: Bearer <token>
+```
+
+**Success (200):**
+```json
+{
+  "user": {
+    "id": 1,
+    "full_name": "Ramesh Kumar",
+    "phone": "9876543210"
+  }
+}
+```
 
 ### Prediction Endpoint
 

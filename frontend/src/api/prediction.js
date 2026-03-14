@@ -3,6 +3,8 @@
  * Handles communication with the backend prediction endpoint
  */
 
+import { getStoredToken } from "./auth";
+
 const DEFAULT_API_BASE = import.meta.env.DEV ? "http://127.0.0.1:8000/api" : "/api";
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE).replace(/\/+$/, "");
 const REQUEST_TIMEOUT_MS = 30000;
@@ -22,8 +24,10 @@ export async function predictImage(imageFile) {
   let response;
 
   try {
+    const token = getStoredToken();
     response = await fetch(`${API_BASE}/predict`, {
       method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: formData,
       signal: controller.signal,
     });
