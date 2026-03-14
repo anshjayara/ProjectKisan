@@ -201,6 +201,11 @@ Body: file (image file)
 
 ## Troubleshooting
 
+### Vercel register/login works inconsistently?
+- Vercel serverless file storage is ephemeral. SQLite works for quick demos but user data can reset across cold starts.
+- For stable production auth, set a persistent `DATABASE_URL` (for example Neon/Postgres/Supabase) in Vercel environment variables.
+- Also set `AGROAID_JWT_SECRET` in Vercel environment variables.
+
 ### Frontend won't connect to backend?
 - Check CORS is enabled in `backend/app/main.py` (it is by default)
 - Check API_BASE URL in `frontend/src/api/prediction.js`

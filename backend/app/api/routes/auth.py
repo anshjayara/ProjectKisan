@@ -3,7 +3,7 @@ import re
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from ...database import get_db
+from ...database import Base, engine, get_db
 from ...dependencies.auth import get_current_user
 from ...models.user import User
 from ...schemas.auth import AuthResponse, LoginRequest, MeResponse, RegisterRequest, UserResponse
@@ -11,6 +11,7 @@ from ...services.password import hash_password, verify_password
 from ...services.token import create_access_token
 
 router = APIRouter()
+Base.metadata.create_all(bind=engine)
 
 PHONE_PATTERN = re.compile(r"^\d{10}$")
 
