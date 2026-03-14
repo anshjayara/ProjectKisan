@@ -7,7 +7,13 @@ import VoiceInputButton from "./VoiceInputButton";
  * UploadPhotoModal Component
  * Handles image selection, preview, and prediction request
  */
-function UploadPhotoModal({ isOpen, onClose, onPredictionComplete, onAudioCaptured }) {
+function UploadPhotoModal({
+  isOpen,
+  onClose,
+  onPredictionComplete,
+  onAudioCaptured,
+  onPreviewSelected,
+}) {
   const { t } = useLanguage();
   const fileInputRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -32,7 +38,12 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete, onAudioCaptur
     // Create preview URL
     const reader = new FileReader();
     reader.onload = (event) => {
-      setPreviewUrl(event.target.result);
+      const nextPreviewUrl = event.target.result;
+      setPreviewUrl(nextPreviewUrl);
+      onPreviewSelected?.({
+        fileName: file.name,
+        imagePreviewUrl: nextPreviewUrl,
+      });
     };
     reader.readAsDataURL(file);
   };
@@ -53,6 +64,7 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete, onAudioCaptur
       onPredictionComplete({
         ...prediction,
         fileName: selectedFile.name,
+        imagePreviewUrl: previewUrl,
       });
 
       handleClose();

@@ -365,10 +365,13 @@ function DashboardScreen({
   isUploadModalOpen,
   onUploadModalClose,
   onPredictionComplete,
+  uploadPreview,
+  onUploadPreviewChange,
   sensorReadings,
   suggestions,
   alerts,
   language,
+  userName,
   onLanguageChange,
   onLogout,
   t,
@@ -383,6 +386,7 @@ function DashboardScreen({
           isOpen={isUploadModalOpen}
           onClose={onUploadModalClose}
           onPredictionComplete={onPredictionComplete}
+          onPreviewSelected={onUploadPreviewChange}
           onAudioCaptured={(audio) => onAudioCaptured({ ...audio, source: "modal" })}
         />
 
@@ -414,14 +418,14 @@ function DashboardScreen({
             <section className="welcome-row">
               <div>
                 <p className="greeting">
-                  {t("dashboard.greeting")} <span aria-hidden="true">👋</span>
+                  {t("dashboard.greeting", { name: userName })} <span aria-hidden="true">👋</span>
                 </p>
                 <p className="location-line">
                   {t("dashboard.location")} <span aria-hidden="true">|</span> {t("dashboard.season")}
                 </p>
               </div>
 
-              <div className="avatar-wrap" aria-label={t("dashboard.avatarAria")}>
+              <div className="avatar-wrap" aria-label={t("dashboard.avatarAria", { name: userName })}>
                 <div className="avatar" aria-hidden="true" />
                 <span className="online-dot" aria-hidden="true" />
               </div>
@@ -511,9 +515,25 @@ function DashboardScreen({
             </div>
 
             <div className="upload-action-grid">
-              <button type="button" className="upload-trigger" onClick={onUploadClick}>
-                {t("upload.triggerButton")}
-              </button>
+              {uploadPreview?.imagePreviewUrl ? (
+                <button
+                  type="button"
+                  className="upload-preview-tile"
+                  onClick={onUploadClick}
+                  aria-label={t("upload.chooseDifferent")}
+                >
+                  <img
+                    src={uploadPreview.imagePreviewUrl}
+                    alt={t("upload.uploadTitle")}
+                    className="upload-preview-tile-image"
+                  />
+                  <span className="upload-preview-tile-label">{t("upload.chooseDifferent")}</span>
+                </button>
+              ) : (
+                <button type="button" className="upload-trigger upload-trigger--placeholder" onClick={onUploadClick}>
+                  {t("upload.triggerButton")}
+                </button>
+              )}
 
               <VoiceInputButton
                 compact
@@ -573,6 +593,7 @@ function DashboardScreen({
 function App() {
   const { language, setLanguage, t, isReady, hasSelectedLanguage } = useLanguage();
   const {
+    user,
     isAuthenticated,
     isLoadingAuth,
     authError,
@@ -583,12 +604,20 @@ function App() {
   } = useAuth();
   const [activeTab, setActiveTab] = useState("home");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadPreview, setUploadPreview] = useState(null);
   const [diagnosis, setDiagnosis] = useState(null);
   const [recordedAudio, setRecordedAudio] = useState(null);
   const [sensorData, setSensorData] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [authSubmitting, setAuthSubmitting] = useState(false);
+  const userFirstName = useMemo(() => {
+    const fullName = user?.full_name?.trim();
+    if (!fullName) {
+      return t("dashboard.defaultUserName");
+    }
+    return fullName.split(/\s+/)[0];
+  }, [t, user]);
 
   useEffect(() => {
     const generated = generateDashboardData();
@@ -680,12 +709,15 @@ function App() {
         isUploadModalOpen={isUploadModalOpen}
         onUploadModalClose={closeUploadModal}
         onPredictionComplete={handlePredictionComplete}
+        uploadPreview={uploadPreview}
+        onUploadPreviewChange={setUploadPreview}
         diagnosis={diagnosis}
         recordedAudio={recordedAudio}
         sensorReadings={sensorData}
         suggestions={suggestions}
         alerts={alerts}
         language={language}
+        userName={userFirstName}
         onLanguageChange={setLanguage}
         onLogout={logout}
         t={t}
