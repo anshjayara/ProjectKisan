@@ -1,7 +1,12 @@
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
 from ...schemas.prediction import PredictionResponse
-from ...services.disease_model import DISEASE_METADATA, predict_disease
+from ...services.disease_model import (
+    DISEASE_METADATA,
+    DISEASE_NAMES_HI,
+    URGENCY_LABELS_HI,
+    predict_disease,
+)
 
 router = APIRouter()
 
@@ -37,4 +42,8 @@ async def predict_crop_disease(file: UploadFile = File(...)) -> PredictionRespon
         treatment=metadata["treatment"],
         urgency_level=urgency_level,
         is_healthy=is_healthy,
+        disease_hi=DISEASE_NAMES_HI.get(disease),
+        treatment_hi=metadata.get("treatment_hi"),
+        status_hi="स्वस्थ" if is_healthy else "अस्वस्थ",
+        urgency_label_hi=URGENCY_LABELS_HI.get(urgency_level),
     )

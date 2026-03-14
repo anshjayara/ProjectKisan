@@ -2,20 +2,35 @@ from io import BytesIO
 
 from PIL import Image, ImageStat
 
+DISEASE_NAMES_HI = {
+    "Healthy": "स्वस्थ",
+    "Bacterial Blight": "बैक्टीरियल ब्लाइट",
+    "Leaf Spot": "लीफ स्पॉट",
+}
+
+URGENCY_LABELS_HI = {
+    "high": "उच्च",
+    "medium": "मध्यम",
+    "low": "कम",
+}
+
 # Disease metadata: treatment, urgency level, and health status
 DISEASE_METADATA = {
     "Healthy": {
         "treatment": "No action needed. Keep regular irrigation and nutrient monitoring.",
+        "treatment_hi": "कोई कार्रवाई आवश्यक नहीं है। नियमित सिंचाई और पोषक तत्वों की निगरानी जारी रखें।",
         "urgency_level": "low",
         "is_healthy": True,
     },
     "Bacterial Blight": {
         "treatment": "Remove infected leaves, avoid overhead watering, and apply copper-based bactericide.",
+        "treatment_hi": "संक्रमित पत्तियों को हटाएं, ऊपर से सिंचाई से बचें, और तांबा आधारित जीवाणुनाशक का उपयोग करें।",
         "urgency_level": "high",
         "is_healthy": False,
     },
     "Leaf Spot": {
         "treatment": "Prune affected areas, improve air circulation, and apply recommended fungicide.",
+        "treatment_hi": "प्रभावित हिस्सों की छंटाई करें, हवा का प्रवाह बेहतर करें, और अनुशंसित फफूंदनाशक का उपयोग करें।",
         "urgency_level": "medium",
         "is_healthy": False,
     },

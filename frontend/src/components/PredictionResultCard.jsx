@@ -1,12 +1,13 @@
 import { getUrgencyBadgeClass, getUrgencyLabel } from "../api/prediction";
 import { useLanguage } from "../context/LanguageContext";
+import DiagnosisVoiceAssistant from "./DiagnosisVoiceAssistant";
 
 /**
  * PredictionResultCard Component
  * Displays the complete prediction result with disease, confidence, urgency, and treatment
  */
 function PredictionResultCard({ prediction }) {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   if (!prediction) {
     return null;
@@ -64,6 +65,8 @@ function PredictionResultCard({ prediction }) {
         <h3 className="treatment-title">{t("prediction.recommendedTreatment")}</h3>
         <p className="treatment-text">{treatment}</p>
       </div>
+
+      <DiagnosisVoiceAssistant diagnosisResult={prediction} language={language} />
 
       {fileName && (
         <div className="file-info">
