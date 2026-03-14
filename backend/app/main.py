@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api.routes import damage, predict, weather
+from .api.routes import auth, damage, predict, weather
+from .database import Base, engine
 
 
 def create_app(api_prefix: str = "/api") -> FastAPI:
@@ -22,6 +23,11 @@ def create_app(api_prefix: str = "/api") -> FastAPI:
     app.include_router(predict.router, prefix=api_prefix, tags=["Disease Detection"])
     app.include_router(weather.router, prefix=f"{api_prefix}/weather", tags=["Weather Prediction"])
     app.include_router(damage.router, prefix=f"{api_prefix}/damage", tags=["Crop Damage Assessment"])
+    app.include_router(auth.router, prefix=f"{api_prefix}/auth", tags=["Authentication"])
+
+    @app.on_event("startup")
+    def initialize_database() -> None:
+        Base.metadata.create_all(bind=engine)
 
     @app.get("/")
     def read_root() -> dict[str, str]:
