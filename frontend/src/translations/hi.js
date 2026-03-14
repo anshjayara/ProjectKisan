@@ -77,7 +77,8 @@ const hi = {
   },
   dashboard: {
     homeAria: "एग्रोएड होम डैशबोर्ड",
-    greeting: "नमस्ते, रमेश!",
+    greeting: "नमस्ते, {{name}}!",
+    defaultUserName: "किसान",
     location: "पंजाब, भारत",
     season: "कटाई का मौसम",
     sensorStatus: "फार्म सेंसर स्थिति",
@@ -91,7 +92,7 @@ const hi = {
     farmActivityAria: "फार्म गतिविधि सुझाव",
     farmAlertAria: "फार्म अलर्ट फ़ीड",
     detailedSensorAria: "विस्तृत सेंसर स्थिति",
-    avatarAria: "रमेश ऑनलाइन",
+    avatarAria: "{{name}} ऑनलाइन",
     sensorReadingAria: "{{label}} रीडिंग",
   },
   nav: {

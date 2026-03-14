@@ -77,7 +77,8 @@ const en = {
   },
   dashboard: {
     homeAria: "AgroAid home dashboard",
-    greeting: "Hello, Ramesh!",
+    greeting: "Hello, {{name}}!",
+    defaultUserName: "Farmer",
     location: "Punjab, India",
     season: "Harvesting Season",
     sensorStatus: "Farm Sensor Status",
@@ -91,7 +92,7 @@ const en = {
     farmActivityAria: "Farm activity suggestions",
     farmAlertAria: "Farm alert feed",
     detailedSensorAria: "Detailed sensor status",
-    avatarAria: "Ramesh online",
+    avatarAria: "{{name}} online",
     sensorReadingAria: "{{label}} reading",
   },
   nav: {
