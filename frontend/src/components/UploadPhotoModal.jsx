@@ -1,18 +1,20 @@
 import { useRef, useState } from "react";
 import { predictImage } from "../api/prediction";
 import { useLanguage } from "../context/LanguageContext";
+import VoiceInputButton from "./VoiceInputButton";
 
 /**
  * UploadPhotoModal Component
  * Handles image selection, preview, and prediction request
  */
-function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
+function UploadPhotoModal({ isOpen, onClose, onPredictionComplete, onAudioCaptured }) {
   const { t } = useLanguage();
   const fileInputRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorKey, setErrorKey] = useState(null);
+  const [voiceResetSignal, setVoiceResetSignal] = useState(0);
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
@@ -53,10 +55,7 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
         fileName: selectedFile.name,
       });
 
-      // Reset modal
-      setSelectedFile(null);
-      setPreviewUrl(null);
-      onClose();
+      handleClose();
     } catch (err) {
       if (typeof err.message === "string" && err.message.startsWith("apiErrors.")) {
         setErrorKey(err.message);
@@ -80,6 +79,7 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
     setSelectedFile(null);
     setPreviewUrl(null);
     setErrorKey(null);
+    setVoiceResetSignal((currentValue) => currentValue + 1);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -151,6 +151,15 @@ function UploadPhotoModal({ isOpen, onClose, onPredictionComplete }) {
           )}
 
           {errorKey && <div className="error-message">{t(errorKey)}</div>}
+
+          <div className="upload-divider" aria-hidden="true">
+            <span>{t("voice.orDivider")}</span>
+          </div>
+
+          <VoiceInputButton
+            onAudioCaptured={onAudioCaptured}
+            resetSignal={voiceResetSignal}
+          />
         </div>
 
         <div className="modal-footer">

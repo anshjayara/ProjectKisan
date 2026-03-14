@@ -2,9 +2,46 @@ import { useEffect, useMemo, useState } from "react";
 import UploadPhotoModal from "./components/UploadPhotoModal";
 import PredictionResultCard from "./components/PredictionResultCard";
 import InsuranceClaimAssistant from "./components/InsuranceClaimAssistant";
+import VoiceInputButton from "./components/VoiceInputButton";
 import { generateDashboardData } from "./utils/dashboardMockData";
 import LanguageSelectionScreen from "./components/LanguageSelectionScreen";
 import { useLanguage } from "./context/LanguageContext";
+
+function formatAudioDuration(durationMs = 0) {
+  const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
+  const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}
+
+function VoiceCaptureSummary({ recordedAudio, t }) {
+  if (!recordedAudio) {
+    return null;
+  }
+
+  return (
+    <section className="voice-summary-card" aria-label={t("voice.summaryAria")}>
+      <div className="voice-summary-head">
+        <div>
+          <p className="voice-summary-eyebrow">{t("voice.latestRecording")}</p>
+          <h3 className="voice-summary-title">{t("voice.summaryTitle")}</h3>
+        </div>
+        <span className="voice-summary-badge">{t(`voice.source.${recordedAudio.source}`)}</span>
+      </div>
+
+      <p className="voice-summary-text">{t("voice.summaryDescription")}</p>
+
+      <div className="voice-summary-meta">
+        <span>{t("voice.duration", { duration: formatAudioDuration(recordedAudio.durationMs) })}</span>
+        <span>{recordedAudio.mimeType}</span>
+      </div>
+
+      <audio controls className="voice-audio-player" src={recordedAudio.url}>
+        {t("voice.audioFallback")}
+      </audio>
+    </section>
+  );
+}
 
 function SensorCard({ label, value, unit, status, icon, wide = false, t }) {
   return (
@@ -177,7 +214,9 @@ function DashboardScreen({
   activeTab,
   onTabChange,
   onUploadClick,
+  onAudioCaptured,
   diagnosis,
+  recordedAudio,
   isUploadModalOpen,
   onUploadModalClose,
   onPredictionComplete,
@@ -198,6 +237,7 @@ function DashboardScreen({
           isOpen={isUploadModalOpen}
           onClose={onUploadModalClose}
           onPredictionComplete={onPredictionComplete}
+          onAudioCaptured={(audio) => onAudioCaptured({ ...audio, source: "modal" })}
         />
 
         <header className="top-bar">
@@ -320,15 +360,26 @@ function DashboardScreen({
             <div className="section-head upload-head">
               <h2>{t("dashboard.uploadHeader")}</h2>
             </div>
-            <button type="button" className="upload-trigger" onClick={onUploadClick}>
-              {t("upload.triggerButton")}
-            </button>
+
+            <div className="upload-action-grid">
+              <button type="button" className="upload-trigger" onClick={onUploadClick}>
+                {t("upload.triggerButton")}
+              </button>
+
+              <VoiceInputButton
+                compact
+                className="upload-voice-input"
+                onAudioCaptured={(audio) => onAudioCaptured({ ...audio, source: "upload" })}
+              />
+            </div>
 
             {diagnosis && (
               <PredictionResultCard prediction={diagnosis} />
             )}
 
-            {!diagnosis && (
+            {recordedAudio && <VoiceCaptureSummary recordedAudio={recordedAudio} t={t} />}
+
+            {!diagnosis && !recordedAudio && (
               <p className="empty-copy">{t("dashboard.uploadEmpty")}</p>
             )}
           </section>
@@ -378,6 +429,7 @@ function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [diagnosis, setDiagnosis] = useState(null);
+  const [recordedAudio, setRecordedAudio] = useState(null);
   const [sensorData, setSensorData] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [alerts, setAlerts] = useState([]);
@@ -390,6 +442,12 @@ function App() {
     setSuggestions(generated.suggestions);
     setAlerts(generated.alerts);
   }, []);
+
+  useEffect(() => () => {
+    if (recordedAudio?.url) {
+      URL.revokeObjectURL(recordedAudio.url);
+    }
+  }, [recordedAudio]);
 
   const handleLoginSubmit = (event) => {
     event.preventDefault();
@@ -412,6 +470,11 @@ function App() {
 
   const handlePredictionComplete = (predictionResult) => {
     setDiagnosis(predictionResult);
+    setActiveTab("upload");
+  };
+
+  const handleAudioCaptured = (audioResult) => {
+    setRecordedAudio(audioResult);
     setActiveTab("upload");
   };
 
@@ -446,10 +509,12 @@ function App() {
       activeTab={activeTab}
       onTabChange={setActiveTab}
       onUploadClick={openUploadModal}
+      onAudioCaptured={handleAudioCaptured}
       isUploadModalOpen={isUploadModalOpen}
       onUploadModalClose={closeUploadModal}
       onPredictionComplete={handlePredictionComplete}
       diagnosis={diagnosis}
+      recordedAudio={recordedAudio}
       sensorReadings={sensorData}
       suggestions={suggestions}
       alerts={alerts}

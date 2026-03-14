@@ -745,6 +745,74 @@ input {
   cursor: pointer;
 }
 
+.upload-action-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.upload-voice-input {
+  min-width: 0;
+}
+
+.voice-summary-card {
+  border-radius: 16px;
+  border: 1px solid #d8eadb;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbf8 100%);
+  box-shadow: var(--shadow);
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.voice-summary-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.voice-summary-eyebrow {
+  margin: 0 0 4px;
+  color: #5c656f;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.voice-summary-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.voice-summary-badge {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #e9f5ea;
+  color: #1f7e36;
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.voice-summary-text {
+  margin: 0;
+  color: #5f6873;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.voice-summary-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  color: #66707a;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
 .preview-card {
   border-radius: 14px;
   border: 1px solid var(--line);
@@ -802,6 +870,104 @@ input {
   font-size: 0.8rem;
   color: #54606c;
   line-height: 1.45;
+}
+
+.diagnosis-voice-card {
+  margin-top: 12px;
+  border-radius: 14px;
+  border: 1px solid #d8eadb;
+  background: #ffffff;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.diagnosis-voice-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.diagnosis-voice-eyebrow {
+  margin: 0 0 4px;
+  color: #5c656f;
+  text-transform: uppercase;
+  font-size: 0.66rem;
+  letter-spacing: 0.03em;
+  font-weight: 700;
+}
+
+.diagnosis-voice-title {
+  margin: 0;
+  font-size: 0.94rem;
+  color: var(--text);
+}
+
+.diagnosis-voice-copy,
+.diagnosis-voice-note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #5f6873;
+  line-height: 1.45;
+}
+
+.diagnosis-voice-badge {
+  border-radius: 999px;
+  background: #e9f5ea;
+  color: #1f7e36;
+  padding: 6px 10px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.diagnosis-voice-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.diagnosis-voice-button {
+  border: 1px solid #d8eadb;
+  border-radius: 12px;
+  min-height: 48px;
+  padding: 10px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.diagnosis-voice-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.diagnosis-voice-button--play {
+  background: linear-gradient(180deg, #24b31f 0%, #1b9517 100%);
+  border-color: #1b9517;
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(34, 179, 31, 0.18);
+}
+
+.diagnosis-voice-button--play.is-active {
+  background: linear-gradient(180deg, #2a9fdf 0%, #1c7bb1 100%);
+  border-color: #1c7bb1;
+}
+
+.diagnosis-voice-button--stop {
+  background: #f4faf4;
+  color: #1f7e36;
+}
+
+.diagnosis-voice-button-icon {
+  font-size: 0.9rem;
+  line-height: 1;
 }
 
 .file-label {
@@ -1043,6 +1209,32 @@ input {
   color: var(--muted);
 }
 
+.upload-divider {
+  position: relative;
+  margin: 16px 0;
+  text-align: center;
+}
+
+.upload-divider::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1px solid #e1e7df;
+}
+
+.upload-divider span {
+  position: relative;
+  display: inline-block;
+  padding: 0 10px;
+  background: #ffffff;
+  color: #7c858f;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
 .upload-trigger-btn {
   border: 0;
   border-radius: 12px;
@@ -1177,6 +1369,218 @@ input {
   color: #54606c;
   font-weight: 600;
   font-size: 0.95rem;
+}
+
+.voice-input-card {
+  border-radius: 16px;
+  border: 1px solid #dbeadf;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fcf8 100%);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.voice-input-card--compact {
+  padding: 12px;
+}
+
+.voice-input-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.voice-input-eyebrow {
+  margin: 0 0 4px;
+  color: #5c656f;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.voice-input-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.voice-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #fdecec;
+  color: #bf3e3e;
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.voice-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: voicePulse 1s ease-in-out infinite;
+}
+
+@keyframes voicePulse {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.85);
+    opacity: 0.8;
+  }
+}
+
+.voice-input-description {
+  margin: 0;
+  color: #5f6873;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.voice-record-button {
+  width: 100%;
+  min-height: 64px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #24b31f 0%, #1b9517 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(34, 179, 31, 0.24);
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.voice-record-button.is-recording {
+  background: linear-gradient(180deg, #db584c 0%, #bc3d34 100%);
+  box-shadow: 0 10px 20px rgba(188, 61, 52, 0.22);
+}
+
+.voice-record-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.18);
+  flex: none;
+}
+
+.voice-record-copy {
+  display: grid;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.voice-record-copy strong,
+.voice-record-copy span {
+  display: block;
+}
+
+.voice-record-copy strong {
+  font-size: 0.96rem;
+  line-height: 1.2;
+}
+
+.voice-record-copy span {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  opacity: 0.92;
+}
+
+.voice-record-timer {
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.voice-preview-card {
+  border-radius: 14px;
+  border: 1px solid #d8eadb;
+  background: #ffffff;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.voice-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.voice-preview-label {
+  margin: 0 0 4px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.voice-preview-meta {
+  margin: 0;
+  font-size: 0.76rem;
+  color: #69727c;
+}
+
+.voice-discard-btn {
+  border: 1px solid #d4e7d7;
+  border-radius: 10px;
+  background: #f4faf4;
+  color: #1f7e36;
+  padding: 8px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.voice-audio-player {
+  width: 100%;
+}
+
+@media (min-width: 700px) {
+  .upload-action-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    align-items: start;
+  }
+}
+
+@media (max-width: 420px) {
+  .voice-record-button {
+    padding: 12px;
+    align-items: flex-start;
+  }
+
+  .voice-preview-head,
+  .voice-summary-head,
+  .voice-input-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .voice-record-timer {
+    align-self: flex-end;
+  }
+
+  .diagnosis-voice-header,
+  .diagnosis-voice-actions {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
 }
 
 /* Enhanced Diagnosis/Prediction Card */
