@@ -3,6 +3,12 @@
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
   "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
+    }
+  ],
   "functions": {
     "api/**/*.py": {
       "excludeFiles": "{backend/.venv/**,frontend/node_modules/**,frontend/dist/**,datasets/**,Pest Detection/**,models/**,**/__pycache__/**,**/*.pyc}"
