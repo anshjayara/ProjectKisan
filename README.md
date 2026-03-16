@@ -1,157 +1,150 @@
-# 🌾 AgroAid – AI-Powered Crop Monitoring Platform
+# AgroAid Prototype
+
+A basic full-stack prototype for an AI-powered agriculture platform that detects potential crop leaf diseases from uploaded images.
+
+## Stack
+
+- Frontend: React + Vite
+- Backend: FastAPI
+- AI model: placeholder image-based heuristic model (designed to be replaced by a CNN later)
+
+## Project Structure
 
-🔗 **Live Demo:** https://project-kisan-pearl.vercel.app/
+```text
+ProjectKisan/
+	backend/
+		app/
+			api/
+				routes/
+					predict.py
+					weather.py      # placeholder for future weather risk module
+					damage.py       # placeholder for future crop damage module
+			schemas/
+				prediction.py
+			services/
+				disease_model.py
+			main.py
+		requirements.txt
+	frontend/
+		src/
+			App.jsx
+			main.jsx
+			styles.css
+		index.html
+		package.json
+		vite.config.js
+```
 
-AgroAid is an **AI-powered crop health monitoring platform** that helps farmers detect plant diseases, pests, and environmental risks using **computer vision, IoT-based environmental insights, and voice-assisted interaction**.
+## Backend Setup (FastAPI)
 
-Farmers can upload crop images, receive AI-based diagnosis, and get preventive recommendations to reduce crop losses.
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
 
----
+Backend runs at `http://127.0.0.1:8000`.
 
-# 🚜 Problem
+Test endpoint docs: `http://127.0.0.1:8000/docs`
 
-Crop destruction is a major issue in agriculture.
+### Prediction API
 
-Crops can be damaged due to:
+- Method: `POST`
+- URL: `http://127.0.0.1:8000/api/predict`
+- Form field: `file` (image)
+- Response:
 
-* Soil pH imbalance
-* Climate changes
-* Pest infestations
-* Bacterial and viral infections
+```json
+{
+	"disease": "Leaf Spot",
+	"confidence": 0.78,
+	"treatment": "Prune affected areas, improve air circulation, and apply recommended fungicide."
+}
+```
 
-Around **20–30% of global crop yield is lost annually due to pests and diseases**. Many farmers detect these problems **only after significant damage occurs**.
+## Frontend Setup (React)
 
-With **4.5+ crore smartphone-using farmers in India**, there is a strong opportunity for **affordable AI-driven crop monitoring solutions**.
+```powershell
+cd frontend
+npm install
+npm run dev
+```
 
----
+Frontend runs at `http://127.0.0.1:5173`.
 
-# 💡 Solution
+Optional API base URL override:
 
-AgroAid enables farmers to:
+```powershell
+$env:VITE_API_BASE_URL="http://127.0.0.1:8000/api"
+npm run dev
+```
 
-* 📸 Upload crop images for **AI-based disease detection**
-* 🐛 Identify pests affecting crops
-* 🌦 Monitor environmental conditions using **IoT datasets**
-* 🔔 Receive **early risk alerts** when environmental conditions threaten crops
-* 📄 Generate crop damage reports for **insurance verification**
+## Deploy To Vercel
 
----
+This repository is configured to deploy to Vercel as a single project:
 
-# ✨ Key Features
+- The React frontend is built from `frontend/`.
+- The FastAPI backend is exposed as a Vercel Python Function through `api/index.py`.
+- API requests use `/api/*` in production by default.
 
-### 🌱 Crop Disease Detection
+### One-time prerequisite
 
-AI models analyze crop images using **computer vision and deep learning** to identify plant diseases.
+Install and authenticate the Vercel CLI:
 
-### 🐛 Pest Detection
+```powershell
+npm install -g vercel
+vercel login
+```
 
-Detects pests affecting crops and recommends treatment.
+If `vercel whoami` returns an authentication error, run `vercel login` again before deploying.
 
-### 🎙 Voice Support
+### Deploy from this repository
 
-Farmers can **describe crop issues using voice**, and results are provided in **text and audio format in Hindi and English**.
+From the repository root:
 
-### 🌍 IoT-Based Environmental Monitoring
+```powershell
+vercel --prod --yes
+```
 
-AgroAid integrates regional environmental data such as **temperature and humidity**.
+Vercel will use the existing root configuration in `vercel.json`:
 
-Example:
-If a tomato crop requires specific conditions and those conditions **have not been met for 2–3 days**, AgroAid predicts possible damage and **sends a notification to the farmer**.
+- Build command: `cd frontend && npm install && npm run build`
+- Static output directory: `frontend/dist`
+- Python API entrypoint: `api/index.py`
 
-### 📄 Crop Damage Assessment
+### What gets deployed
 
-Generates structured reports for **insurance claim verification**.
+- Frontend site at `/`
+- FastAPI routes at `/api/*`
+- Swagger docs at `/docs`
+- Root health response at `/`
 
-To prevent misuse, AgroAid **cross-validates environmental data from the region** to ensure reported damage matches real conditions.
+Example production endpoint:
 
----
+```text
+https://your-project-name.vercel.app/api/predict
+```
 
-# 🧠 Machine Learning
+### Verify after deploy
 
-AgroAid uses **deep learning models** to analyze crop images and detect both **plant diseases and pests**.
+Check these URLs after deployment:
 
-**Pipeline**
+```text
+https://your-project-name.vercel.app/
+https://your-project-name.vercel.app/docs
+https://your-project-name.vercel.app/api/predict
+```
 
-Crop Image → Image Processing → CNN Model → Disease & Pest Detection → Recommendations
+### Notes
 
-### Datasets Used
+- Large local folders such as datasets and model artifacts are excluded from the Vercel Python bundle by `vercel.json`.
+- The current backend uses a heuristic predictor, so deployment does not require loading the `.pth` model file yet.
+- If you later switch to a trained model, make sure the required model file is available in the deployed environment and stays within Vercel function bundle limits.
 
-* **PlantVillage Dataset**
+## Future Expansion Hooks
 
-  * ~54,000 plant images
-  * 38 disease classes
-  * Used for **crop disease detection**
-
-* **Pest Detection Dataset**
-
-  * Contains labeled pest images
-  * Used for **pest identification and classification**
-
-
----
-
-# 🏗 Tech Stack
-
-**Frontend**
-
-* React
-* Next.js
-* Tailwind CSS
-
-**Backend**
-
-* FastAPI (Python)
-
-**Authentication**
-
-* JWT Authentication
-
-**Machine Learning**
-
-* PyTorch
-* TensorFlow
-* CNN / MobileNet / ResNet
-
-**Image Processing**
-
-* OpenCV
-
-**Deployment**
-
-* Vercel
-
----
-
-# 🧩 System Flow
-
-Upload Crop Image
-↓
-Image Processing
-↓
-AI Model Detection
-↓
-Environmental Data Validation
-↓
-Disease Diagnosis + Recommendations
-
----
-
-# 🚀 Future Scope
-
-* Multilingual AI assistant for farmers
-* Mobile application support
-* Satellite and remote sensing crop monitoring
-* Integration with agricultural research institutions
-* Advanced crop stress detection using optical filters
-
----
-
-# 👨‍💻 Team
-
-**Team Classic**
-
----
-
-# 📜 License
-
-For educational and research purposes.
+- Weather-based disease prediction: `backend/app/api/routes/weather.py`
+- Crop damage assessment: `backend/app/api/routes/damage.py`
+- Replace placeholder model logic in `backend/app/services/disease_model.py` with a trained CNN pipeline.
